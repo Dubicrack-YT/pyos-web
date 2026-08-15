@@ -1,4 +1,4 @@
-const CACHE_NAME = "pyos-web-v21";
+const CACHE_NAME = "pyos-web-v22";
 const APP_SHELL = [
   "./",
   "./index.html",
