@@ -1433,7 +1433,7 @@ const PyApps = (() => {
           body.append(el("p", { class: "muted", text: "Al prepararlo, las aplicaciones de esta cuenta podrán solicitar aprobación de forma independiente." }), install);
           return;
         }
-        const controls = el("div", { class: "row toolbar" });
+        const controls = el("div", { class: "row toolbar app-actionbar root-manager-actions" });
         if (selectedProfile.id === api.profile().id) {
           const closeRoot = el("button", { class: "ghost", text: "Cerrar sesión root actual" });
           closeRoot.onclick = () => { api.logoutRoot(); api.toast("Sesión root cerrada."); draw(); };
@@ -1452,7 +1452,8 @@ const PyApps = (() => {
           row.append(el("div", {}, [el("strong", { text: app.name }), el("span", { class: "muted small", text: "Política de " + selectedProfile.name })]), select);
           list.appendChild(row);
         });
-        body.append(el("h2", { text: "Políticas de " + selectedProfile.name }), el("p", { class: "muted", text: "Permitir siempre evita aprobaciones futuras solo en esta cuenta." }), list, controls);
+        body.append(el("h2", { text: "Políticas de " + selectedProfile.name }), el("p", { class: "muted", text: "Permitir siempre evita aprobaciones futuras solo en esta cuenta." }), list);
+        body.parentElement.appendChild(controls);
       }
       draw();
     },
