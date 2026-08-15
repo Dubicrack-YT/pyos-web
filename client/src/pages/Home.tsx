@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, Check, ChevronRight, CircleDot, Clipboard, ExternalLink, MonitorCog, ShieldCheck, Smartphone, TerminalSquare, Wifi } from "lucide-react";
 
-const APP_PATH = "/pyos/index.html";
+const APP_PATH = "./pyos/index.html";
 const ASSETS = {
   logo: "./pyos/icons/icon-192.png",
   hero: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1800&q=85",
@@ -17,7 +17,7 @@ function StatusLine({ label, value }: { label: string; value: string }) {
 export default function Home() {
   const [copied, setCopied] = useState(false);
   const [clock, setClock] = useState("");
-  const installUrl = useMemo(() => typeof window === "undefined" ? APP_PATH : `${window.location.origin}${APP_PATH}`, []);
+  const installUrl = useMemo(() => typeof window === "undefined" ? APP_PATH : new URL(APP_PATH, window.location.href).toString(), []);
 
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }));
