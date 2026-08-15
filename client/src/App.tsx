@@ -1,4 +1,4 @@
-// PyOS design reminder: contemporary UNIX console, phosphor-green is reserved for signal and action.
+/* Diseño PyOS original: portal de terminal utilitaria contemporánea, oscuro y preciso. */
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";

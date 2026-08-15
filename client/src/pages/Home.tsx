@@ -1,252 +1,111 @@
-// PyOS design reminder: a responsive operations console with asymmetric reading flow, precise status signals and restrained motion.
-import { useEffect, useState } from "react";
-import {
-  Activity,
-  ArrowDownRight,
-  ArrowUpRight,
-  Check,
-  ChevronRight,
-  CircleDot,
-  Command,
-  Copy,
-  Cpu,
-  Github,
-  Menu,
-  Network,
-  Radio,
-  ShieldCheck,
-  Terminal,
-  X,
-} from "lucide-react";
+/* Código y estructura originales de PyOS; sólo se ajustan rutas relativas de publicación. */
+import { useEffect, useMemo, useState } from "react";
+import { ArrowDownRight, ArrowUpRight, Check, ChevronRight, CircleDot, Clipboard, ExternalLink, MonitorCog, ShieldCheck, Smartphone, TerminalSquare, Wifi } from "lucide-react";
 
-const heroArt = "/manus-storage/pyos-hero-console_34cd4a29.jpg";
-const telemetryArt = "/manus-storage/pyos-telemetry-panel_f381b034.jpg";
-const textureArt = "/manus-storage/pyos-signal-texture_96fe7ded.jpg";
-const symbolArt = "/manus-storage/pyos-symbol_0b8b2853.png";
+const APP_PATH = "./pyos/index.html";
+const ASSETS = {
+  logo: "./pyos/icons/icon-192.png",
+  hero: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1800&q=85",
+  system: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1400&q=85",
+  install: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1500&q=85",
+};
 
-const modules = [
-  ["CORE", "Kernel orchestration", "ready"],
-  ["SHELL", "Command-first workspace", "ready"],
-  ["NEXUS", "Connected system surface", "sync"],
-];
-
-const telemetry = [
-  ["UPTIME", "99.98%", "steady"],
-  ["RESPONSE", "42 ms", "optimal"],
-  ["UPDATES", "03 queued", "review"],
-];
+function StatusLine({ label, value }: { label: string; value: string }) {
+  return <div className="status-line"><span>{label}</span><strong>{value}</strong></div>;
+}
 
 export default function Home() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [command, setCommand] = useState("status --full");
-  const [commandOutput, setCommandOutput] = useState("Todos los sistemas críticos están operativos.");
   const [copied, setCopied] = useState(false);
   const [clock, setClock] = useState("");
+  const installUrl = useMemo(() => typeof window === "undefined" ? APP_PATH : new URL(APP_PATH, window.location.href).href, []);
 
   useEffect(() => {
-    const updateClock = () =>
-      setClock(
-        new Intl.DateTimeFormat("es-MX", {
-          hour: "2-digit",
-          minute: "2-digit",
-          second: "2-digit",
-          hour12: false,
-        }).format(new Date()),
-      );
-    updateClock();
-    const timer = window.setInterval(updateClock, 1000);
+    const tick = () => setClock(new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }));
+    tick();
+    const timer = window.setInterval(tick, 30000);
     return () => window.clearInterval(timer);
   }, []);
 
-  const runCommand = () => {
-    const normalized = command.trim().toLowerCase();
-    if (normalized.includes("help")) {
-      setCommandOutput("Comandos disponibles: status --full · modules · version · clear");
-      return;
-    }
-    if (normalized.includes("modules")) {
-      setCommandOutput("CORE ready · SHELL ready · NEXUS sync");
-      return;
-    }
-    if (normalized.includes("version")) {
-      setCommandOutput("PyOS Web · interfaz estática 0.1.0");
-      return;
-    }
-    if (normalized.includes("clear")) {
-      setCommandOutput("Consola despejada. Escribe help para consultar los comandos.");
-      return;
-    }
-    setCommandOutput("Todos los sistemas críticos están operativos.");
-  };
-
-  const copyCommand = async () => {
+  const openPyOS = () => window.open(APP_PATH, "_blank", "noopener,noreferrer");
+  const openConsole = () => window.open(`${APP_PATH}?mode=console`, "_blank", "noopener,noreferrer");
+  const copyInstallUrl = async () => {
     try {
-      await navigator.clipboard.writeText(command);
+      await navigator.clipboard.writeText(installUrl);
       setCopied(true);
-      window.setTimeout(() => setCopied(false), 1600);
+      window.setTimeout(() => setCopied(false), 2200);
     } catch {
-      setCommandOutput("No se pudo copiar. Selecciona el comando manualmente.");
+      window.prompt("Copia este enlace para instalar PyOS:", installUrl);
     }
   };
-
-  const closeMenu = () => setMenuOpen(false);
 
   return (
-    <div className="pyos-shell">
+    <div className="pyos-portal">
+      <div className="ambient-grid" aria-hidden="true" />
       <header className="site-header">
-        <a className="brand" href="#top" aria-label="PyOS Web, ir al inicio" onClick={closeMenu}>
-          <img src={symbolArt} alt="Símbolo PyOS" className="brand-mark" />
-          <span className="brand-word" aria-label="PyOS Web"><b>PY</b><b className="wordmark-core">OS</b><i>/</i><b>WEB</b></span>
-        </a>
-
-        <nav className={menuOpen ? "site-nav site-nav-open" : "site-nav"} aria-label="Navegación principal">
-          <a href="#system" onClick={closeMenu}>Sistema</a>
-          <a href="#modules" onClick={closeMenu}>Módulos</a>
-          <a href="#terminal" onClick={closeMenu}>Terminal</a>
-          <a href="#source" onClick={closeMenu}>Código</a>
+        <a className="brand-lockup" href="#inicio" aria-label="Ir al inicio de PyOS Web"><img src={ASSETS.logo} alt="" className="brand-mark" /><span className="brand-word"><b>[</b>PYOS<span>▮</span></span></a>
+        <nav className="site-nav" aria-label="Navegación principal">
+          <a href="#sistema">Sistema</a><a href="#instalar">Instalar</a>
+          <button type="button" className="header-launch" onClick={openPyOS}>Abrir PyOS <ArrowUpRight size={15} strokeWidth={2.2} /></button>
         </nav>
-
-        <div className="header-status">
-          <span className="live-dot" />
-          <span>ONLINE</span>
-          <span className="header-time">{clock || "--:--:--"}</span>
-        </div>
-
-        <button
-          type="button"
-          className="menu-toggle"
-          onClick={() => setMenuOpen((open) => !open)}
-          aria-label={menuOpen ? "Cerrar menú" : "Abrir menú"}
-          aria-expanded={menuOpen}
-        >
-          {menuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
       </header>
 
-      <main id="top">
-        <section className="hero-section" aria-labelledby="hero-title">
-          <div className="hero-grid" aria-hidden="true" />
-          <img src={heroArt} alt="Entorno de operaciones abstracto de PyOS" className="hero-art" />
-          <div className="hero-shade" aria-hidden="true" />
-
-          <div className="hero-copy">
-            <div className="eyebrow"><CircleDot size={14} /> ENTORNO ESTÁTICO · GITHUB PAGES READY</div>
-            <p className="hero-command"><span>pyos@web:~$</span> boot --clean <i aria-hidden="true" /></p>
-            <h1 id="hero-title">Un sistema<br />legible es un sistema<br /><em>controlable.</em></h1>
-            <p className="hero-description">PyOS Web traduce la lógica de un sistema operativo a una superficie web clara, rápida y preparada para cualquier tamaño de pantalla.</p>
-            <div className="hero-actions">
-              <a className="button button-primary" href="#terminal">Abrir consola <ArrowDownRight size={17} /></a>
-              <a className="button button-quiet" href="#modules">Explorar módulos <ChevronRight size={17} /></a>
+      <main id="inicio">
+        <section className="launch-layout" aria-labelledby="hero-title">
+          <aside className="console-rail" aria-label="Estado del sistema">
+            <div className="rail-index">00 / Estado</div>
+            <div className="rail-logo-block"><TerminalSquare size={32} strokeWidth={1.5} /></div>
+            <div className="rail-copy">
+              <p className="eyebrow"><CircleDot size={12} fill="currentColor" /> Núcleo disponible</p>
+              <h1 id="hero-title">Un sistema pequeño.<br />Una sesión completa.</h1>
+              <p>PyOS es una experiencia web instalable para abrir, explorar y conservar en el teléfono.</p>
             </div>
-          </div>
-
-          <aside className="hero-telemetry" aria-label="Estado de ejecución">
-            <div className="telemetry-topline"><span>SYS/REPORT</span><span>LIVE</span></div>
-            <div className="signal-rules"><span /><span /><span /><span /><span /><span /></div>
-            <dl>
-              <div><dt>BUILD</dt><dd>0.1.0</dd></div>
-              <div><dt>CHANNEL</dt><dd>STABLE</dd></div>
-              <div><dt>LAYOUT</dt><dd>FLUID</dd></div>
-            </dl>
-            <p><span className="cursor-block" /> sincronización estable</p>
+            <div className="rail-details"><StatusLine label="canal" value="estable" /><StatusLine label="versión" value="v1.5.0" /><StatusLine label="reloj" value={clock || "--:--"} /></div>
+            <a href="#instalar" className="rail-jump">Ver instalación <ArrowDownRight size={17} /></a>
           </aside>
 
-          <div className="hero-index" aria-hidden="true"><span>01</span><span>INTRODUCTION</span></div>
-        </section>
-
-        <section id="system" className="status-strip" aria-label="Resumen del sistema">
-          <div className="status-intro"><Activity size={18} /><span>ESTADO DEL SISTEMA</span></div>
-          {telemetry.map(([label, value, tone]) => (
-            <div className={`status-cell status-${tone}`} key={label}>
-              <span>{label}</span><strong>{value}</strong>
+          <div className="launch-stage" id="sistema">
+            <img src={ASSETS.hero} alt="Dispositivo mostrando una consola PyOS abstracta" className="stage-art" />
+            <div className="stage-overlay" /><div className="stage-corner stage-corner-a">SYS / 01</div><div className="stage-corner stage-corner-b">PWA READY</div>
+            <div className="launch-copy">
+              <p className="eyebrow">Entorno web independiente</p>
+              <h2>Arranca PyOS<br /><em>desde aquí.</em></h2>
+              <p>El sistema se ejecuta en tu navegador. Abre la sesión completa o continúa en modo instalado desde tu pantalla de inicio.</p>
+              <div className="action-row"><button type="button" className="primary-action" onClick={openPyOS}><span>Iniciar PyOS</span><ArrowUpRight size={19} /></button><button type="button" className="text-action" onClick={openConsole}>Probar Consola <ChevronRight size={18} /></button><a href="#instalar" className="text-action">Cómo instalar <ChevronRight size={18} /></a></div>
             </div>
-          ))}
-          <div className="status-end"><span className="live-dot" /> ACTUALIZADO CONTINUAMENTE</div>
-        </section>
-
-        <section id="modules" className="modules-section">
-          <div className="section-status-line" aria-label="Estado de la sección módulos"><span>DIR / MODULES</span><span>03 ONLINE</span><span>SEEK / 0x401</span></div>
-          <div className="section-heading">
-            <p className="section-kicker">// 01 / CAPACIDADES NUCLEARES</p>
-            <h2>Menos ruido.<br /><span>Más señal.</span></h2>
-          </div>
-          <p className="section-lead">Una capa de interfaz diseñada para mostrar lo importante sin transformar cada interacción en una distracción visual.</p>
-
-          <div className="module-layout">
-            <div className="module-list">
-              {modules.map(([name, description, status], index) => (
-                <article className="module-row" key={name}>
-                  <span className="module-number">0{index + 1}</span>
-                  <div><h3>{name}</h3><p>{description}</p></div>
-                  <span className={`module-status module-${status}`}><span />{status}</span>
-                  <ArrowUpRight className="module-arrow" size={19} aria-hidden="true" />
-                </article>
-              ))}
-            </div>
-            <div className="telemetry-card">
-              <img src={telemetryArt} alt="Patrones técnicos abstractos de telemetría" />
-              <div className="telemetry-card-overlay">
-                <p>TRACE / 2408</p>
-                <div><Network size={18} /><span>La información conserva su contexto.</span></div>
-              </div>
+            <div className="live-window" aria-label="Vista previa interactiva de PyOS">
+              <div className="window-chrome"><div className="window-dots"><i /><i /><i /></div><span><b>LAUNCH / </b>./pyos/index.html</span><a href={APP_PATH} target="_blank" rel="noreferrer" aria-label="Abrir PyOS en otra pestaña"><ExternalLink size={14} /></a></div>
+              <iframe title="Vista previa de PyOS" src={APP_PATH} className="pyos-frame" loading="eager" />
             </div>
           </div>
         </section>
 
-        <section id="terminal" className="terminal-section" style={{ backgroundImage: `url(${textureArt})` }}>
-          <div className="section-status-line section-status-dark" aria-label="Estado de la sección consola"><span>EXEC / LOCAL</span><span>INPUT READY</span><span>RESULT / TRACE</span></div>
-          <div className="terminal-heading">
-            <p className="section-kicker">// 02 / INTERFAZ DE COMANDOS</p>
-            <h2>Prueba la <span>consola.</span></h2>
-            <p>Esta demostración se ejecuta completamente en el navegador. No solicita cuentas ni simula permisos administrativos.</p>
-          </div>
-
-          <div className="terminal-window" aria-label="Consola de demostración PyOS">
-            <div className="terminal-bar"><span><i /><i /><i /></span><p>pyos-terminal — bash</p><span>secure/local</span></div>
-            <div className="terminal-body">
-              <p className="terminal-greeting">PyOS Web 0.1.0 — interfaz de demostración<br />Escribe <strong>help</strong> para consultar comandos disponibles.</p>
-              <div className="command-line">
-                <span>pyos@web:~$</span>
-                <input
-                  value={command}
-                  onChange={(event) => setCommand(event.target.value)}
-                  onKeyDown={(event) => { if (event.key === "Enter") runCommand(); }}
-                  aria-label="Comando de PyOS"
-                  spellCheck="false"
-                />
-                <button type="button" onClick={runCommand} aria-label="Ejecutar comando"><Command size={17} /></button>
-              </div>
-              <div className="command-output"><span>›</span><p>{commandOutput}</p></div>
-            </div>
-            <div className="terminal-footer">
-              <span><ShieldCheck size={15} /> LOCAL / SIN AUTENTICACIÓN</span>
-              <button type="button" onClick={copyCommand}>{copied ? <Check size={15} /> : <Copy size={15} />}{copied ? "COPIADO" : "COPIAR"}</button>
+        <section className="operations-section" aria-label="Características del sistema">
+          <aside className="operations-rail"><span>01 / Operación</span><div className="boot-emblem">▣<i>_</i></div><p>Estado de la sesión</p><StatusLine label="perfiles" value="locales" /><StatusLine label="modos" value="3 activos" /><StatusLine label="pwa" value="lista" /></aside>
+          <div className="operations-panel">
+            <div className="panel-heading"><span>PYOS / CAPACIDADES</span><p>Elige una cuenta, selecciona un modo y continúa con una sesión guardada en este navegador.</p></div>
+            <div className="capability-grid">
+              <article className="capability-card"><span className="card-code">MODE / TRIPLE</span><MonitorCog size={25} strokeWidth={1.5} /><h3>Tres entornos</h3><p>Escritorio para PC, Táctil para teléfono y Consola para TV, teclado o control.</p></article>
+              <article className="capability-card"><span className="card-code">PROFILE / LOCAL</span><ShieldCheck size={25} strokeWidth={1.5} /><h3>Cuentas simuladas</h3><p>Cada perfil conserva archivos, permisos, tema y el modo inicial elegido.</p></article>
+              <article className="capability-card system-surface"><div className="surface-chrome"><i /><i /><i /><span>PYOS / DEVICE INFO</span></div><div className="surface-list"><span>CPU / AMD Ryzen 7</span><span>GPU / NVIDIA RTX</span><span>RAM / 32 GB DDR5</span><span>STORE / LOCAL READY</span></div><div><Wifi size={18} /><span>PWA actualizable · modo consola listo</span></div></article>
             </div>
           </div>
         </section>
 
-        <section id="source" className="source-section">
-          <div className="source-grid-bg" aria-hidden="true" />
-          <div className="section-status-line section-status-source" aria-label="Estado de la sección distribución"><span>DIR / DISTRIBUTION</span><span>DEPLOY / READY</span><span>PAGE / STATIC</span></div>
-          <div className="source-copy">
-            <p className="section-kicker">// 03 / DISTRIBUCIÓN</p>
-            <h2>Hecho para<br />vivir en la <span>web.</span></h2>
-            <p>El proyecto se construye como un sitio estático adaptable y se distribuye de forma independiente mediante GitHub Pages.</p>
-            <a className="button button-primary" href="https://github.com/Dubicrack-YT" target="_blank" rel="noreferrer">Ver perfil GitHub <Github size={17} /></a>
-          </div>
-          <div className="source-facts">
-            <div><span>01</span><h3>Responsive</h3><p>La consola se organiza para táctil, tableta y escritorio.</p></div>
-            <div><span>02</span><h3>Estático</h3><p>Sin secretos, credenciales ni control de acceso simulado.</p></div>
-            <div><span>03</span><h3>Portable</h3><p>Una publicación reproducible desde el repositorio.</p></div>
+        <section className="install-operation" id="instalar" aria-labelledby="install-title">
+          <aside className="install-rail"><span>02 / Instalar</span><div className="boot-emblem">▣<i>_</i></div><p>Destino: pantalla de inicio</p><StatusLine label="red" value="requerida" /><StatusLine label="pwa" value="instalable" /></aside>
+          <div className="install-panel">
+            <div className="install-visual"><img src={ASSETS.install} alt="Panel operativo de instalación de PyOS" /><span className="install-number">02</span></div>
+            <div className="install-body">
+              <p className="eyebrow">Instalación / PWA</p><h2 id="install-title">Instala PyOS<br />en la pantalla<br />de inicio.</h2>
+              <p>Abre PyOS desde el móvil y usa el menú del navegador para añadirlo a la pantalla de inicio. Después funcionará como una aplicación independiente con tus perfiles locales.</p>
+              <div className="install-actions"><button type="button" className="secondary-action" onClick={openPyOS}><Smartphone size={18} /> Abrir para instalar</button><button type="button" className="copy-link" onClick={copyInstallUrl}>{copied ? <Check size={17} /> : <Clipboard size={17} />}{copied ? "Enlace copiado" : "Copiar enlace"}</button></div>
+              <p className="install-note"><span>Nota</span> La instalación se realiza desde la página completa de PyOS, no desde la vista previa.</p>
+            </div>
           </div>
         </section>
       </main>
 
-      <footer className="site-footer">
-        <div className="footer-brand"><img src={symbolArt} alt="" /><span className="brand-word" aria-label="PyOS Web"><b>PY</b><b className="wordmark-core">OS</b><i>/</i><b>WEB</b></span></div>
-        <p>Interfaz estática de referencia. No representa un servicio de administración ni un sistema de autenticación.</p>
-        <a href="#top">VOLVER ARRIBA <ArrowUpRight size={15} /></a>
-      </footer>
+      <footer className="site-footer"><div className="footer-brand"><img src={ASSETS.logo} alt="" /><span>PyOS / WEB BUILD</span></div><p>Aplicación instalable · entorno cliente · estado operativo</p><a href={APP_PATH} target="_blank" rel="noreferrer">Abrir sistema <ArrowUpRight size={14} /></a></footer>
     </div>
   );
 }

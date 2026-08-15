@@ -8,3 +8,9 @@
 - [ ] Configurar GitHub Pages para el repositorio independiente de PyOS Web.
 - [ ] Informar por separado el estado y los siguientes pasos del sitio web existente.
 - [ ] No modificar, subir ni publicar los archivos del sitio web incluido en `pyos-web.zip`.
+- [ ] Restaurar PyOS Web desde la versión original del archivo aportado por el usuario.
+- [ ] Sustituir las rutas de recursos internas de Manus por activos que GitHub Pages pueda servir.
+- [ ] Verificar la portada restaurada en la URL pública antes de confirmar la corrección.
+- [ ] Restablecer PyOS Web con el código original incluido en `pyos-web.zip`, sin rediseñar su interfaz.
+- [ ] Conservar únicamente los cambios imprescindibles para compatibilidad con GitHub Pages.
+- [ ] Identificar y rehacer Dubicrack Hub como el proyecto correcto, sin alterar PyOS Web.

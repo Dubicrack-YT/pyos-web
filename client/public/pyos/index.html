@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+<title>PyOS Web</title>
+<meta name="description" content="Un sistema operativo de juguete que corre 100% en tu navegador." />
+<meta name="theme-color" content="#0d0d0d" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="PyOS" />
+<link rel="manifest" href="./manifest.json" />
+<link rel="icon" href="./icons/icon-192.png" />
+<link rel="apple-touch-icon" href="./icons/icon-192.png" />
+<link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+<div id="app-root"></div>
+<div id="modal-layer"></div>
+<div id="toast" class="toast"></div>
+<script>
+  // Si un navegador no puede interpretar alguno de los scripts de PyOS,
+  // evita una pantalla vacía y muestra una indicación de recuperación.
+  (function () {
+    var startupErrorShown = false;
+    function showStartupError() {
+      var root = document.getElementById("app-root");
+      if (startupErrorShown || !root || root.children.length) return;
+      startupErrorShown = true;
+      root.innerHTML =
+        '<main role="alert" style="padding:24px;line-height:1.5">' +
+        '<h1>PyOS no pudo iniciar</h1>' +
+        '<p>Actualiza el navegador y vuelve a abrir la aplicación. Si el problema continúa, elimina esta instalación de PyOS e instálala nuevamente desde la versión publicada.</p>' +
+        '</main>';
+    }
+    window.addEventListener("error", showStartupError, true);
+    window.addEventListener("unhandledrejection", showStartupError);
+  })();
+</script>
+<script src="./js/storage.js"></script>
+<script src="./js/apps.js"></script>
+<script src="./js/desktop.js"></script>
+<script src="./js/touch.js"></script>
+<script src="./js/console.js"></script>
+<script src="./js/os.js"></script>
+<script>
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function () {
+      navigator.serviceWorker
+        .register("./sw.js")
+        .then(function (registration) {
+          return registration.update();
+        })
+        .catch(function (error) {
+          console.warn("No se pudo actualizar PyOS para uso sin conexión.", error);
+        });
+    });
+  }
+</script>
+</body>
+</html>
