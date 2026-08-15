@@ -561,13 +561,15 @@
 
   function elevate(cb, requesterId) {
     const requester = requesterId || "terminal";
-    if (!PyStorage.isAdmin()) {
-      toast("La elevación root está disponible solo para cuentas administradoras.");
-      PyStorage.logSystemEvent("root", "Solicitud root denegada para " + requester + ": cuenta estándar");
+    const activeProfile = PyStorage.getActiveProfile();
+    const isAdministrator = PyStorage.isAdmin();
+    const manager = PyStorage.getRootManagerForProfile(activeProfile.id);
+    if (!isAdministrator && !manager.installed) {
+      toast("Un administrador debe preparar Root Manager para esta cuenta.");
+      PyStorage.logSystemEvent("root", "Solicitud root pendiente para " + requester + ": perfil estándar sin Root Manager");
       cb(false);
       return;
     }
-    const manager = PyStorage.getRootManager();
     if (!manager.installed) {
       openModal("Gestor root no instalado", (body, close) => {
         body.append(el("p", { class: "warn-text", text: "PyOS usa un gestor de privilegios por aplicación. Instálalo para aprobar solicitudes de superusuario sin usar una contraseña global." }));
@@ -583,7 +585,7 @@
     const approve = (persistent) => {
       if (persistent) {
         manager.grants[requester] = "allow";
-        PyStorage.setRootManager(manager);
+        PyStorage.setRootManagerForProfile(activeProfile.id, manager);
       }
       sessionRoot = true;
       PyStorage.logSystemEvent("root", "Privilegio superusuario concedido a " + requester + (persistent ? " (política permanente)" : " (una vez)"));

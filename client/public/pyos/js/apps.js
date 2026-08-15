@@ -1389,7 +1389,13 @@ const PyApps = (() => {
     render(root, api) {
       if (!api.isAdmin()) {
         const body = appSurface(root, api, rootManager);
-        body.append(el("div", { class: "banner warn", text: "Solo una cuenta administradora puede administrar las políticas root del sistema." }));
+        const profile = api.profile();
+        const manager = api.rootManagerForProfile(profile.id);
+        body.append(
+          el("h2", { text: "Root Manager · " + profile.name }),
+          el("div", { class: "banner " + (manager.installed ? "ok" : "warn"), text: manager.installed ? "ROOT / CONFIGURADO · Puedes solicitar privilegios según las políticas de esta cuenta." : "ROOT / PENDIENTE · Un administrador debe preparar Root Manager para esta cuenta." }),
+          el("p", { class: "muted", text: manager.installed ? "Las políticas se administran desde una cuenta administradora. Tus aplicaciones pueden solicitar elevación cuando la necesiten." : "Cambia temporalmente a una cuenta administradora, abre Root Manager, selecciona " + profile.name + " y pulsa Preparar Root Manager." })
+        );
         return;
       }
       let selectedProfileId = api.profile().id;

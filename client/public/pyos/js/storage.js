@@ -353,7 +353,7 @@ const PyStorage = (() => {
 
   function defaultConfig() {
     return {
-      version: "2.1.1",
+      version: "2.1.2",
       username: getActiveProfile().username,
       display_name: getActiveProfile().name,
       installed_at: new Date().toISOString(),
@@ -493,8 +493,8 @@ const PyStorage = (() => {
     } else {
       const cfg = getConfig();
       if (!cfg.device_profile) cfg.device_profile = defaultConfig().device_profile;
-      if (cfg.version !== "2.1.1") {
-        cfg.version = "2.1.1";
+      if (cfg.version !== "2.1.2") {
+        cfg.version = "2.1.2";
         setConfig(cfg);
       }
     }
