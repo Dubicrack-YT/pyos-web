@@ -25,6 +25,7 @@ function startDesktop(buildApi, sys) {
   shell.append(desktop, taskbar);
   rootEl.appendChild(shell);
 
+  // PyOS escritorio: ventanas terminales con geometría contenida, arrastre estable y maximizado reversible.
   // ---- Ventanas -----------------------------------------------------
   const windows = new Map(); // winId -> {frame, appId, name, icon, minimized, hooks}
   const windowOrder = [];
@@ -94,28 +95,74 @@ function startDesktop(buildApi, sys) {
     refreshTaskbar();
   }
 
+  function getDesktopBounds() {
+    return { width: Math.max(1, desktop.clientWidth), height: Math.max(1, desktop.clientHeight) };
+  }
+
+  function getWindowMinimums() {
+    const { width, height } = getDesktopBounds();
+    return {
+      width: Math.min(300, Math.max(1, Math.min(220, width - 16))),
+      height: Math.min(200, Math.max(1, Math.min(160, height - 16))),
+    };
+  }
+
+  function applyWindowGeometry(w) {
+    w.frame.style.left = w.x + "px";
+    w.frame.style.top = w.y + "px";
+    w.frame.style.width = w.width + "px";
+    w.frame.style.height = w.height + "px";
+  }
+
+  function clampWindow(w) {
+    const { width: dw, height: dh } = getDesktopBounds();
+    if (w.maximized) {
+      w.x = 0;
+      w.y = 0;
+      w.width = dw;
+      w.height = dh;
+      applyWindowGeometry(w);
+      return;
+    }
+
+    const minimums = getWindowMinimums();
+    const maxWidth = Math.max(minimums.width, dw - 16);
+    const maxHeight = Math.max(minimums.height, dh - 16);
+    w.width = Math.max(minimums.width, Math.min(w.width, maxWidth));
+    w.height = Math.max(minimums.height, Math.min(w.height, maxHeight));
+    w.x = Math.max(0, Math.min(w.x, Math.max(0, dw - w.width)));
+    w.y = Math.max(0, Math.min(w.y, Math.max(0, dh - w.height)));
+    applyWindowGeometry(w);
+  }
+
   function clampAllWindows() {
-    const dw = desktop.clientWidth;
-    const dh = desktop.clientHeight;
-    if (dw < 10 || dh < 10) return;
-    windows.forEach((w) => {
-      const minWidth = Math.min(300, Math.max(220, dw - 16));
-      const minHeight = Math.min(200, Math.max(160, dh - 16));
-      let width = Math.max(minWidth, Math.min(w.width, dw - 16));
-      let height = Math.max(minHeight, Math.min(w.height, dh - 16));
-      let x = Math.min(w.x, dw - width);
-      let y = Math.min(w.y, dh - height);
-      x = Math.max(0, x);
-      y = Math.max(0, y);
-      w.x = x;
-      w.y = y;
-      w.width = width;
-      w.height = height;
-      w.frame.style.left = x + "px";
-      w.frame.style.top = y + "px";
-      w.frame.style.width = width + "px";
-      w.frame.style.height = height + "px";
-    });
+    windows.forEach(clampWindow);
+  }
+
+  function toggleMaximize(id) {
+    const w = windows.get(id);
+    if (!w) return;
+
+    if (w.maximized) {
+      const restore = w.restoreBounds;
+      w.maximized = false;
+      w.restoreBounds = null;
+      if (restore) {
+        w.x = restore.x;
+        w.y = restore.y;
+        w.width = restore.width;
+        w.height = restore.height;
+      }
+    } else {
+      w.restoreBounds = { x: w.x, y: w.y, width: w.width, height: w.height };
+      w.maximized = true;
+    }
+
+    w.frame.classList.toggle("maximized", w.maximized);
+    w.maximizeButton.textContent = w.maximized ? "❐" : "□";
+    w.maximizeButton.title = w.maximized ? "Restaurar" : "Maximizar";
+    clampWindow(w);
+    focusWindow(id);
   }
   window.addEventListener("resize", clampAllWindows);
 
@@ -134,8 +181,8 @@ function startDesktop(buildApi, sys) {
   function openAppWindow(app, args) {
     const id = nextWinId++;
     cascade = (cascade + 1) % 8;
-    const availableWidth = Math.max(280, desktop.clientWidth - 24);
-    const availableHeight = Math.max(200, desktop.clientHeight - 24);
+    const availableWidth = Math.max(1, desktop.clientWidth - 16);
+    const availableHeight = Math.max(1, desktop.clientHeight - 16);
     const width = Math.min(680, availableWidth);
     const height = Math.min(500, availableHeight);
     const x = Math.max(8, Math.min(28 + cascade * 26, availableWidth - width + 8));
@@ -150,15 +197,16 @@ function startDesktop(buildApi, sys) {
     const titlebar = el("div", { class: "app-titlebar" });
     const titleLabel = el("span", { class: "app-title", text: app.icon + "  " + app.name });
     const btnMin = el("button", { class: "win-btn", text: "\u2013", title: "Minimizar" });
+    const btnMax = el("button", { class: "win-btn maximize", text: "□", title: "Maximizar" });
     const btnClose = el("button", { class: "win-btn close", text: "\u00d7", title: "Cerrar" });
-    titlebar.append(titleLabel, btnMin, btnClose);
+    titlebar.append(titleLabel, btnMin, btnMax, btnClose);
 
     const content = el("div", { class: "app-content desktop-native-app" });
     const grip = el("div", { class: "resize-grip" });
     frame.append(titlebar, content, grip);
     windowsLayer.appendChild(frame);
 
-    const winState = { frame, appId: app.id, name: app.name, icon: app.icon, minimized: false, x, y, width, height, activateCallbacks: [], destroyCallbacks: [] };
+    const winState = { frame, appId: app.id, name: app.name, icon: app.icon, minimized: false, maximized: false, restoreBounds: null, maximizeButton: btnMax, x, y, width, height, activateCallbacks: [], destroyCallbacks: [] };
     windows.set(id, winState);
     windowOrder.push(id);
 
@@ -191,6 +239,15 @@ function startDesktop(buildApi, sys) {
       frame.classList.add("minimized");
       refreshTaskbar();
     };
+    btnMax.onclick = (e) => {
+      e.stopPropagation();
+      toggleMaximize(id);
+    };
+    titlebar.addEventListener("dblclick", (e) => {
+      if (e.target.closest(".win-btn")) return;
+      e.preventDefault();
+      toggleMaximize(id);
+    });
 
     makeDraggable(frame, titlebar, winState);
     makeResizable(frame, grip, winState);
@@ -205,6 +262,7 @@ function startDesktop(buildApi, sys) {
     let startX, startY, origX, origY;
     handle.addEventListener("mousedown", (e) => {
       if (e.target.closest(".win-btn")) return;
+      if (winState.maximized) return;
       dragging = true;
       startX = e.clientX;
       startY = e.clientY;
@@ -232,6 +290,7 @@ function startDesktop(buildApi, sys) {
     let resizing = false;
     let startX, startY, origW, origH;
     grip.addEventListener("mousedown", (e) => {
+      if (winState.maximized) return;
       resizing = true;
       startX = e.clientX;
       startY = e.clientY;
@@ -242,10 +301,11 @@ function startDesktop(buildApi, sys) {
     });
     window.addEventListener("mousemove", (e) => {
       if (!resizing) return;
-      const maxWidth = Math.max(220, desktop.clientWidth - winState.x - 8);
-      const maxHeight = Math.max(160, desktop.clientHeight - winState.y - 8);
-      let nw = Math.min(maxWidth, Math.max(Math.min(300, maxWidth), origW + (e.clientX - startX)));
-      let nh = Math.min(maxHeight, Math.max(Math.min(200, maxHeight), origH + (e.clientY - startY)));
+      const minimums = getWindowMinimums();
+      const maxWidth = Math.max(minimums.width, desktop.clientWidth - winState.x - 8);
+      const maxHeight = Math.max(minimums.height, desktop.clientHeight - winState.y - 8);
+      let nw = Math.min(maxWidth, Math.max(minimums.width, origW + (e.clientX - startX)));
+      let nh = Math.min(maxHeight, Math.max(minimums.height, origH + (e.clientY - startY)));
       winState.width = nw;
       winState.height = nh;
       frame.style.width = nw + "px";
