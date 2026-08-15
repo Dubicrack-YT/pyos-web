@@ -24,6 +24,33 @@ const PyApps = (() => {
     return node;
   }
 
+  function appSurface(root, api, app) {
+    const mode = api.currentMode();
+    root.classList.add("app-mode-root", "app-mode-" + mode);
+    const surface = el("section", { class: "app-surface app-surface-" + mode + " app-surface-" + app.id });
+    const header = el("header", { class: "app-surface-header" });
+    if (mode === "desktop") {
+      header.append(el("span", { class: "app-surface-kicker", text: "APP / " + app.id.toUpperCase() }), el("strong", { text: app.icon + "  " + app.name }), el("span", { class: "app-surface-mode", text: "VENTANA" }));
+    } else if (mode === "touch") {
+      header.append(el("span", { class: "app-surface-icon", text: app.icon }), el("div", {}, [el("strong", { text: app.name }), el("span", { text: "Panel táctil" })]));
+    } else {
+      header.append(el("span", { class: "app-surface-kicker", text: "PYOS / TV APP" }), el("span", { class: "app-surface-icon", text: app.icon }), el("div", {}, [el("strong", { text: app.name }), el("span", { text: "A · activar  /  B · volver" })]));
+    }
+    const body = el("div", { class: "app-surface-body" });
+    surface.append(header, body);
+    root.appendChild(surface);
+    return body;
+  }
+
+  function ensureAppSurface(root, api, app) {
+    const alreadyFramed = Array.from(root.children).some((node) => node.classList && node.classList.contains("app-surface"));
+    if (alreadyFramed) return;
+    const children = Array.from(root.childNodes);
+    root.innerHTML = "";
+    const body = appSurface(root, api, app);
+    children.forEach((child) => body.appendChild(child));
+  }
+
   // ---------------------------------------------------------------
   const about = {
     id: "about",
@@ -32,11 +59,12 @@ const PyApps = (() => {
     permissions: [],
     description: "Informacion del sistema.",
     render(root, api) {
-      root.appendChild(
+      const body = appSurface(root, api, about);
+      body.appendChild(
         el("div", { class: "app-about" }, [
           el("h1", { text: "PyOS Web" }),
           el("p", { text: "version " + api.systemVersion() }),
-          el("p", { text: "Un sistema operativo de juguete que corre 100% en tu navegador." }),
+          el("p", { text: "Un entorno operativo personal que corre directamente en tu navegador." }),
           el("p", { text: "Usuario actual: " + api.username() }),
           el("p", { class: "muted", text: "Todo se guarda en el almacenamiento local de este navegador -- nada sale de aca." }),
         ])
@@ -52,6 +80,7 @@ const PyApps = (() => {
     permissions: ["fs_read", "fs_write", "fs_delete"],
     description: "Navega, crea y borra archivos. Con 'Modo root' se ve todo el sistema.",
     render(root, api) {
+      const body = appSurface(root, api, explorer);
       const state = { cwd: "", root: false };
       const top = el("div", { class: "row toolbar" });
       const pathLabel = el("span", { class: "path-label" });
@@ -70,7 +99,7 @@ const PyApps = (() => {
       const btnRefresh = el("button", { class: "ghost", text: "Actualizar" });
       btns.append(btnOpen, btnNew, btnFile, btnDel, btnRoot, btnRefresh);
 
-      root.append(top, list, btns);
+      body.append(top, list, btns);
 
       let selected = null;
 
@@ -169,7 +198,12 @@ const PyApps = (() => {
           return;
         }
         if (!api.isRoot()) {
-          api.toast("Necesitas ser root. Abri la Terminal y escribi 'su'.");
+          api.elevate((approved) => {
+            if (!approved) return;
+            state.root = true;
+            state.cwd = "";
+            refresh();
+          });
           return;
         }
         state.root = true;
@@ -191,7 +225,7 @@ const PyApps = (() => {
     name: "Bloc de notas",
     icon: "N",
     permissions: ["fs_read", "fs_write"],
-    description: "Edita archivos del perfil y, en modo root, archivos del sistema simulados.",
+    description: "Edita archivos del perfil y, en modo root, archivos del sistema.",
     render(root, api) {
       const state = { path: api.args && api.args.path, root: !!(api.args && api.args.root) };
       const textarea = el("textarea", { class: "notepad-area", spellcheck: "false" });
@@ -199,7 +233,7 @@ const PyApps = (() => {
       const btnSave = el("button", { text: "Guardar" });
       const statusEl = el("span", { class: "muted small" });
       btns.append(btnSave, statusEl);
-      if (state.root) root.appendChild(el("div", { class: "banner warn", text: "Editor de sistema activo: los cambios afectan solo a esta simulación de PyOS. Los archivos críticos siguen protegidos." }));
+      if (state.root) root.appendChild(el("div", { class: "banner warn", text: "Editor de sistema activo: los cambios se aplican a los archivos administrados por PyOS. Los archivos críticos siguen protegidos." }));
       root.append(textarea, btns);
 
       const fileOps = () => state.root ? api.rootFs : api.fs;
@@ -244,7 +278,7 @@ const PyApps = (() => {
     "  rm <nombre>     borrar archivo o carpeta",
     "  pwd             mostrar carpeta actual",
     "  whoami / id     usuario actual",
-    "  profiles        listar cuentas locales simuladas",
+    "  profiles        listar cuentas locales",
     "  profile         ver el perfil activo",
     "  profile add <n> crear una cuenta local",
     "  profile switch  abrir el selector de cuentas",
@@ -265,9 +299,10 @@ const PyApps = (() => {
     permissions: ["fs_read", "fs_write", "fs_delete"],
     description: "Consola de comandos con solicitudes de superusuario a Root Manager.",
     render(root, api) {
+      const body = appSurface(root, api, terminal);
       const shellService = api.services().shell;
       if (!shellService || !shellService.enabled) {
-        root.append(el("div", { class: "banner warn", text: "El servicio Shell está detenido. Abre Servicios root con una sesión aprobada para volver a iniciarlo." }));
+        body.append(el("div", { class: "banner warn", text: "El servicio Shell está detenido. Abre Servicios root con una sesión aprobada para volver a iniciarlo." }));
         return;
       }
       const state = { cwd: "", history: [], histIdx: -1 };
@@ -276,7 +311,7 @@ const PyApps = (() => {
       const prompt = el("span", { class: "term-prompt" });
       const input = el("input", { type: "text", class: "term-input", autocomplete: "off", spellcheck: "false" });
       inputRow.append(prompt, input);
-      root.append(out, inputRow);
+      body.append(out, inputRow);
 
       function println(s = "") {
         const line = el("div", { text: s });
@@ -329,7 +364,7 @@ const PyApps = (() => {
           const stats = api.systemStats();
           println("PyOS " + stats.pyosVersion + " · perfil " + stats.profileName);
           println("Modo " + stats.mode + " · apps " + stats.appCount + " · ventanas " + stats.openWindows);
-          println("Archivos " + stats.homeFileCount + " · disco simulado " + stats.diskUsage);
+          println("Archivos " + stats.homeFileCount + " · almacenamiento " + stats.diskUsage);
         }
         else if (cmd === "ls") {
           const entries = fs.list(state.cwd) || [];
@@ -463,14 +498,15 @@ const PyApps = (() => {
     name: "Cuentas",
     icon: "U",
     permissions: [],
-    description: "Crea, modifica o elimina cuentas locales simuladas.",
+    description: "Crea, modifica o elimina cuentas locales.",
     render(root, api) {
       function renderAccounts() {
         root.innerHTML = "";
+        const body = appSurface(root, api, accounts);
         const current = api.profile();
         const admin = api.isAdmin();
         const banner = el("div", { class: "banner " + (admin ? "ok" : "warn"), text: admin ? "Cuenta administradora: puedes crear, editar roles y eliminar perfiles locales." : "Cuenta estándar: puedes cambiar de perfil, pero no administrar otras cuentas." });
-        root.appendChild(banner);
+        body.appendChild(banner);
         const profileList = el("div", { class: "account-list" });
         api.profiles().forEach((profile) => {
           const card = el("div", { class: "account-card" });
@@ -510,7 +546,7 @@ const PyApps = (() => {
           card.append(info, actions);
           profileList.appendChild(card);
         });
-        root.appendChild(profileList);
+        body.appendChild(profileList);
         if (!admin) return;
         const creator = el("div", { class: "account-create" });
         const nameInput = el("input", { class: "modal-input", type: "text", placeholder: "Nombre de nueva cuenta" });
@@ -523,7 +559,7 @@ const PyApps = (() => {
           if (result.ok) renderAccounts();
         };
         creator.append(nameInput, roleSelect, createBtn);
-        root.append(el("h3", { text: "Nueva cuenta local" }), creator);
+        body.append(el("h3", { text: "Nueva cuenta local" }), creator);
       }
       renderAccounts();
     },
@@ -831,7 +867,7 @@ const PyApps = (() => {
         );
       });
       root.appendChild(
-        el("p", { class: "muted small", text: "Estos datos son reales de tu navegador, no simulados." })
+        el("p", { class: "muted small", text: "Datos del entorno de ejecución y del almacenamiento local de PyOS." })
       );
     },
   };
@@ -839,7 +875,7 @@ const PyApps = (() => {
   // ---------------------------------------------------------------
   const FAKE_VIRUSES = [
     ["trollware_clasico.virus", "Trollware Clasico", "Te tira mensajes molestos cada tanto."],
-    ["gusano_de_juguete.virus", "Gusano de juguete", "Se autocopia por tu carpeta personal."],
+    ["gusano_local.virus", "Gusano local", "Se autocopia por tu carpeta personal."],
     ["ransomware_de_broma.virus", "Ransomware de broma", "Te bloquea los iconos del escritorio."],
     ["troyano_gatito.virus", "Troyano Gatito", "Le cambia el color al escritorio y llena todo de gatos."],
     ["spyware_curioso.virus", "Spyware Curioso", "Registra actividad en la consola del navegador."],
@@ -863,7 +899,7 @@ const PyApps = (() => {
         );
         const btn = el("button", { text: "Descargar" });
         btn.onclick = () => {
-          const content = SIGNATURE + ": " + name + "\n\nArchivo de juguete para practicar con el Antivirus de PyOS.\n";
+          const content = SIGNATURE + ": " + name + "\n\nArchivo de prueba para el módulo de seguridad de PyOS.\n";
           api.fs.write("Descargas/" + fname, content);
           api.toast("Descargado: " + fname);
         };
@@ -878,11 +914,11 @@ const PyApps = (() => {
     name: "Antivirus PyOS",
     icon: "AV",
     permissions: ["fs_read", "fs_write", "fs_delete"],
-    description: "Escanea tu carpeta personal en busca de los virus de juguete de la Zona de descargas.",
+    description: "Escanea tu carpeta personal en busca de amenazas presentes en la Zona de descargas.",
     render(root, api) {
       if (api.isRoot()) {
         root.appendChild(
-          el("p", { class: "warn-text danger", text: "La sesion root esta activa en todo PyOS ahora mismo. Si no la estas usando, escribi 'exit' en la Terminal." })
+          el("p", { class: "warn-text danger", text: "La sesión root está activa en todo PyOS. Si ya no la necesitas, ciérrala desde Root Manager." })
         );
       }
       const status = el("p", { class: "muted", text: "Sin escanear todavia." });
@@ -1036,31 +1072,212 @@ const PyApps = (() => {
     },
   };
 
+  // ---------------------------------------------------------------
+  // Voxel Forge — sandbox de bloques propio, persistente por perfil.
+  const voxelforge = {
+    id: "voxelforge",
+    name: "Voxel Forge",
+    icon: "VF",
+    permissions: [],
+    description: "Forja un mundo de bloques, extrae recursos y construye por perfil.",
+    render(root, api) {
+      const columns = 9;
+      const rows = 7;
+      const blockInfo = {
+        grass: { label: "Hierba", glyph: "▦" },
+        dirt: { label: "Arcilla", glyph: "▤" },
+        stone: { label: "Pizarra", glyph: "▩" },
+        copper: { label: "Cobre", glyph: "◆" },
+        sand: { label: "Arena", glyph: "░" },
+        ice: { label: "Hielo", glyph: "◇" },
+      };
+      const targetOffsets = [{ x: 0, y: 1, label: "ABAJO" }, { x: -1, y: 0, label: "IZQUIERDA" }, { x: 1, y: 0, label: "DERECHA" }, { x: 0, y: -1, label: "ARRIBA" }];
+      const blockTypes = Object.keys(blockInfo);
+      function freshWorld() {
+        const world = [];
+        for (let y = 0; y < rows; y += 1) {
+          const line = [];
+          for (let x = 0; x < columns; x += 1) {
+            let type = "air";
+            if (y === 2) type = x === 0 ? "ice" : x === columns - 1 ? "sand" : "grass";
+            if (y === 3) type = x === 0 ? "ice" : x > columns - 3 ? "sand" : "dirt";
+            if (y >= 4) type = (x + y * 3) % 7 === 0 ? "copper" : y === 6 && x < 2 ? "ice" : "stone";
+            line.push(type);
+          }
+          world.push(line);
+        }
+        return world;
+      }
+      const saved = api.getPreference("voxelforge_state", null);
+      const hasWorld = saved && Array.isArray(saved.world) && saved.world.length === rows && saved.world.every((line) => Array.isArray(line) && line.length === columns);
+      const state = {
+        world: hasWorld ? saved.world : freshWorld(),
+        player: saved && saved.player ? saved.player : { x: 4, y: 1 },
+        inventory: saved && saved.inventory ? saved.inventory : { grass: 0, dirt: 3, stone: 4, copper: 0, sand: 0, ice: 0 },
+        targetIndex: saved && typeof saved.targetIndex === "number" ? saved.targetIndex : 0,
+        selectedBlock: saved && saved.selectedBlock && blockInfo[saved.selectedBlock] ? saved.selectedBlock : "stone",
+        actions: saved && typeof saved.actions === "number" ? saved.actions : 0,
+      };
+      blockTypes.forEach((type) => { if (typeof state.inventory[type] !== "number") state.inventory[type] = 0; });
+      state.player.x = Math.max(0, Math.min(columns - 1, Number(state.player.x) || 4));
+      state.player.y = Math.max(0, Math.min(rows - 1, Number(state.player.y) || 1));
+      const body = appSurface(root, api, voxelforge);
+      const cover = el("section", { class: "voxel-hero" });
+      cover.style.backgroundImage = "linear-gradient(90deg, rgba(8,13,11,.94), rgba(8,13,11,.45)), url('./images/voxel-forge-reference_9bb4e9a6.png')";
+      cover.append(el("span", { text: "VOXEL FORGE / EXPEDICIÓN LOCAL" }), el("strong", { text: "Construye una ruta bajo tierra" }), el("small", { text: "Extrae bloques, cambia el material activo y deja tu mundo guardado en este perfil." }));
+      const stage = el("div", { class: "voxel-stage" });
+      const board = el("div", { class: "voxel-board" });
+      const side = el("aside", { class: "voxel-side" });
+      const stateLine = el("p", { class: "voxel-state" });
+      const inventory = el("div", { class: "voxel-inventory" });
+      const controls = el("div", { class: "voxel-controls" });
+      const hint = el("p", { class: "muted voxel-hint", text: api.currentMode() === "console" ? "Selecciona una acción con cruceta o joystick y pulsa A. B vuelve al carrusel." : "Toca un bloque para marcarlo; usa las acciones para explorar, extraer y colocar." });
+      stage.append(board, side);
+      side.append(stateLine, inventory, controls, hint);
+      body.append(cover, stage);
+
+      function persist() {
+        api.setPreference("voxelforge_state", state);
+      }
+      function target() {
+        const offset = targetOffsets[state.targetIndex % targetOffsets.length];
+        return { x: state.player.x + offset.x, y: state.player.y + offset.y, label: offset.label };
+      }
+      function inside(point) {
+        return point.x >= 0 && point.x < columns && point.y >= 0 && point.y < rows;
+      }
+      function setStatus(text) {
+        stateLine.textContent = text;
+      }
+      function redrawBoard() {
+        const mark = target();
+        board.innerHTML = "";
+        for (let y = 0; y < rows; y += 1) {
+          for (let x = 0; x < columns; x += 1) {
+            const type = state.world[y][x];
+            const cell = el("div", { class: "voxel-cell voxel-" + type + (mark.x === x && mark.y === y ? " targeted" : "") + (state.player.x === x && state.player.y === y ? " player" : "") });
+            if (type !== "air") cell.textContent = blockInfo[type].glyph;
+            if (state.player.x === x && state.player.y === y) cell.appendChild(el("span", { class: "voxel-player", text: "◉" }));
+            cell.onclick = () => {
+              const dx = x - state.player.x;
+              const dy = y - state.player.y;
+              const index = targetOffsets.findIndex((offset) => offset.x === dx && offset.y === dy);
+              if (index !== -1) { state.targetIndex = index; persist(); redraw(); }
+              else api.toast("Marca un bloque contiguo al explorador.");
+            };
+            board.appendChild(cell);
+          }
+        }
+      }
+      function redrawInventory() {
+        inventory.innerHTML = "";
+        blockTypes.forEach((type) => {
+          const item = el("button", { class: "voxel-item" + (state.selectedBlock === type ? " selected" : "") }, [el("span", { text: blockInfo[type].glyph }), el("strong", { text: blockInfo[type].label }), el("small", { text: "× " + state.inventory[type] })]);
+          item.onclick = () => { state.selectedBlock = type; persist(); redraw(); };
+          inventory.appendChild(item);
+        });
+      }
+      function redraw() {
+        const mark = target();
+        const material = blockInfo[state.selectedBlock].label;
+        if (placeBlock) placeBlock.textContent = "Colocar " + material;
+        setStatus("Explorador [" + (state.player.x + 1) + ", " + (state.player.y + 1) + "] · objetivo " + mark.label + " · material " + material + " · acciones " + state.actions);
+        redrawBoard();
+        redrawInventory();
+      }
+      function move(dx, dy) {
+        const next = { x: state.player.x + dx, y: state.player.y + dy };
+        if (!inside(next)) { api.toast("El límite de esta zona está marcado."); return; }
+        if (state.world[next.y][next.x] !== "air") { api.toast("Hay un bloque en esa dirección. Extrae primero el terreno."); return; }
+        state.player = next;
+        state.actions += 1;
+        persist();
+        redraw();
+      }
+      function cycleTarget() {
+        state.targetIndex = (state.targetIndex + 1) % targetOffsets.length;
+        persist();
+        redraw();
+      }
+      function mine() {
+        const mark = target();
+        if (!inside(mark) || state.world[mark.y][mark.x] === "air") { api.toast("No hay un bloque extraíble en el objetivo."); return; }
+        const type = state.world[mark.y][mark.x];
+        state.world[mark.y][mark.x] = "air";
+        state.inventory[type] += 1;
+        state.actions += 1;
+        persist();
+        api.toast(blockInfo[type].label + " añadido al inventario.");
+        redraw();
+      }
+      function place() {
+        const mark = target();
+        if (!inside(mark) || state.world[mark.y][mark.x] !== "air") { api.toast("El objetivo debe estar libre para colocar un bloque."); return; }
+        if (state.inventory[state.selectedBlock] < 1) { api.toast("No quedan bloques de " + blockInfo[state.selectedBlock].label + "."); return; }
+        state.world[mark.y][mark.x] = state.selectedBlock;
+        state.inventory[state.selectedBlock] -= 1;
+        state.actions += 1;
+        persist();
+        redraw();
+      }
+      function regenerate() {
+        state.world = freshWorld();
+        state.player = { x: 4, y: 1 };
+        state.inventory = { grass: 0, dirt: 3, stone: 4, copper: 0, sand: 0, ice: 0 };
+        state.targetIndex = 0;
+        state.selectedBlock = "stone";
+        state.actions = 0;
+        persist();
+        api.logSystemEvent("voxelforge", "Mundo de Voxel Forge regenerado para " + api.username());
+        redraw();
+      }
+      const left = el("button", { text: "← Mover" });
+      const up = el("button", { text: "↑ Subir" });
+      const down = el("button", { text: "↓ Bajar" });
+      const right = el("button", { text: "Mover →" });
+      const aim = el("button", { class: "ghost", text: "Cambiar objetivo" });
+      const extract = el("button", { text: "Extraer bloque" });
+      const placeBlock = el("button", { text: "Colocar " + blockInfo[state.selectedBlock].label });
+      const reset = el("button", { class: "danger", text: "Regenerar zona" });
+      left.onclick = () => move(-1, 0);
+      up.onclick = () => move(0, -1);
+      down.onclick = () => move(0, 1);
+      right.onclick = () => move(1, 0);
+      aim.onclick = cycleTarget;
+      extract.onclick = mine;
+      placeBlock.onclick = place;
+      reset.onclick = () => api.confirm("Regenerar Voxel Forge", "Se reiniciará el mundo guardado de este perfil.", (ok) => { if (ok) regenerate(); });
+      controls.append(left, up, down, right, aim, extract, placeBlock, reset);
+      redraw();
+    },
+  };
+
   const deviceInfo = {
     id: "deviceinfo",
     name: "Device Info",
     icon: "DI",
     permissions: [],
-    description: "Inventario y telemetría simulada de CPU, GPU, memoria y almacenamiento.",
+    description: "Inventario y telemetría operativa de CPU, GPU, memoria, red y almacenamiento.",
     render(root, api) {
+      const body = appSurface(root, api, deviceInfo);
       const hardware = api.deviceProfile();
       const cpuModel = hardware.cpu || "AMD Ryzen 7 7800X3D";
       const gpuModel = hardware.gpu || "NVIDIA GeForce RTX 4070 SUPER";
       const memoryGb = Number(hardware.memory_gb) || 32;
       const storageGb = Number(hardware.storage_gb) || 1024;
       const header = el("div", { class: "device-header" }, [
-        el("div", { class: "device-chip", text: "PYOS / HARDWARE SIMULADO" }),
+        el("div", { class: "device-chip", text: "PYOS / TELEMETRÍA DEL EQUIPO" }),
         el("h2", { text: "Device Info" }),
-        el("p", { class: "muted", text: "Este panel representa un equipo virtual de PyOS; no lee el hardware físico del navegador." }),
+        el("p", { class: "muted", text: "Monitor de recursos, carga de procesos y servicios operativos de PyOS." }),
       ]);
       const metrics = el("div", { class: "device-metrics" });
       const detail = el("div", { class: "device-detail" });
-      root.append(header, metrics, detail);
+      body.append(header, metrics, detail);
       const components = [
         { label: "CPU", model: cpuModel, meta: "8 núcleos · 16 hilos · AM5 · 4.2 GHz base", key: "cpu" },
-        { label: "GPU", model: gpuModel, meta: "12 GB GDDR6X · Ray Tracing · Driver 555.85 simulado", key: "gpu" },
+        { label: "GPU", model: gpuModel, meta: "12 GB GDDR6X · Ray Tracing · Driver 555.85", key: "gpu" },
         { label: "RAM", model: memoryGb + " GB DDR5-6000", meta: "2 × " + (memoryGb / 2) + " GB · doble canal · 6000 MT/s", key: "ram" },
-        { label: "ALM", model: (storageGb / 1024).toFixed(0) + " TB NVMe PCIe 4.0", meta: "Volumen PyOS · sistema de archivos local simulado", key: "storage" },
+        { label: "ALM", model: (storageGb / 1024).toFixed(0) + " TB NVMe PCIe 4.0", meta: "Volumen PyOS · sistema de archivos local", key: "storage" },
       ];
       components.forEach((component) => {
         detail.appendChild(el("article", { class: "device-component" }, [
@@ -1087,18 +1304,14 @@ const PyApps = (() => {
           metrics.append(metric("CPU AMD", "PAUSA", "Servicio de telemetría detenido", 0), metric("GPU NVIDIA", "PAUSA", "Servicio de telemetría detenido", 0), metric("RAM DDR5", "PAUSA", "Servicio de telemetría detenido", 0), metric("NVMe", "PAUSA", "Servicio de telemetría detenido", 0));
           return;
         }
-        const t = Date.now() / 1000;
-        const cpu = Math.round(18 + (Math.sin(t * 0.8 + seed) + 1) * 17);
-        const gpu = Math.round(11 + (Math.cos(t * 0.65 + seed) + 1) * 13);
-        const ram = memoryGb * (0.29 + ((Math.sin(t * 0.35) + 1) * 0.022));
-        const gpuTemp = Math.round(41 + gpu * 0.3);
-        const storage = storageGb * (0.305 + ((Math.cos(t * 0.08) + 1) * 0.0002));
+        const data = api.hardwareTelemetry();
         metrics.innerHTML = "";
         metrics.append(
-          metric("CPU AMD", cpu + "%", "4.6 GHz · " + (49 + Math.round(cpu * .18)) + " °C", cpu),
-          metric("GPU NVIDIA", gpu + "%", "" + gpuTemp + " °C · 1.9 GHz", gpu),
-          metric("RAM DDR5", ram.toFixed(1) + " / " + memoryGb + " GB", "" + Math.round(ram / memoryGb * 100) + "% en uso", ram / memoryGb * 100),
-          metric("NVMe", storage.toFixed(1) + " / " + storageGb + " GB", "" + Math.round(storage / storageGb * 100) + "% utilizado", storage / storageGb * 100)
+          metric("CPU AMD", data.cpu + "%", data.cpuClock + " GHz · " + data.cpuTemp + " °C · " + data.processes + " procesos", data.cpu),
+          metric("GPU NVIDIA", data.gpu + "%", data.gpuTemp + " °C · " + data.gpuClock + " MHz", data.gpu),
+          metric("RAM DDR5", data.ram.toFixed(1) + " / " + memoryGb + " GB", "" + Math.round(data.ram / memoryGb * 100) + "% en uso", data.ram / memoryGb * 100),
+          metric("NVMe", data.storage.toFixed(1) + " / " + storageGb + " GB", data.diskRate + " MB/s · " + Math.round(data.storage / storageGb * 100) + "% utilizado", data.storage / storageGb * 100),
+          metric("RED", data.net.toFixed(1) + " Mb/s", navigator.onLine ? "Enlace activo · latencia 18 ms" : "Sin conexión", Math.min(96, data.net * 12))
         );
       }
       update();
@@ -1114,28 +1327,28 @@ const PyApps = (() => {
     permissions: [],
     description: "Personaliza el color operativo y el aspecto de tu perfil PyOS.",
     render(root, api) {
-      const presets = [
-        ["Fósforo", "#39ff14"],
-        ["Cobalto", "#69a9ff"],
-        ["Ámbar", "#ffbd59"],
-        ["Coral", "#ff776b"],
-      ];
-      const current = api.getPreference("accent_color", "#39ff14");
+      const current = api.activeTheme();
       const swatches = el("div", { class: "theme-swatches" });
-      const status = el("p", { class: "muted", text: "Color activo: " + current });
-      presets.forEach(([name, color]) => {
-        const btn = el("button", { class: "theme-swatch", text: name });
-        btn.style.borderColor = color;
-        btn.style.color = color;
+      const status = el("p", { class: "muted", text: "Tema activo: " + current.name + ". Cambia acento, fondos, paneles y contraste en todo PyOS." });
+      api.themes().forEach((theme) => {
+        const btn = el("button", { class: "theme-swatch" + (theme.id === current.id ? " selected" : "") }, [
+          el("span", { class: "theme-swatch-dot" }),
+          el("strong", { text: theme.name }),
+          el("small", { text: theme.id === current.id ? "ACTIVO" : "Aplicar paleta" }),
+        ]);
+        btn.style.setProperty("--swatch-accent", theme.accent);
+        btn.style.setProperty("--swatch-bg", theme.bg);
         btn.onclick = () => {
-          api.setPreference("accent_color", color);
-          document.documentElement.style.setProperty("--accent", color);
-          status.textContent = "Color activo: " + name;
-          api.toast("Tema aplicado a este perfil.");
+          api.setTheme(theme.id);
+          status.textContent = "Tema activo: " + theme.name + ". Fondo, superficies y acento actualizados.";
+          swatches.querySelectorAll(".theme-swatch").forEach((item) => item.classList.remove("selected"));
+          btn.classList.add("selected");
+          btn.querySelector("small").textContent = "ACTIVO";
+          api.toast("Tema " + theme.name + " aplicado a este perfil.");
         };
         swatches.appendChild(btn);
       });
-      root.append(el("h2", { text: "Theme Studio" }), el("p", { class: "muted", text: "La personalización se guarda por perfil y se aplica al reiniciar PyOS." }), swatches, status);
+      root.append(el("h2", { text: "Theme Studio" }), el("p", { class: "muted", text: "Cada paleta aplica un ambiente completo y se guarda por perfil local." }), swatches, status);
     },
   };
 
@@ -1144,7 +1357,7 @@ const PyApps = (() => {
     name: "Servicios root",
     icon: "R",
     permissions: [],
-    description: "Panel root para revisar y alternar servicios simulados de PyOS.",
+    description: "Panel root para revisar y alternar servicios operativos de PyOS.",
     render(root, api) {
       if (!api.isAdmin() || !api.isRoot()) {
         root.append(el("div", { class: "banner warn", text: "Esta aplicación necesita una cuenta administradora y una sesión root aprobada desde Root Manager." }));
@@ -1162,8 +1375,8 @@ const PyApps = (() => {
         list.appendChild(el("div", { class: "task-row" }, [check, el("span", { text: service.label + " · " + service.detail }), state]));
       });
       const restart = el("button", { class: "ghost", text: "Reiniciar todos" });
-      restart.onclick = () => { Object.keys(services).forEach((id) => { services[id].enabled = true; }); save(); api.logSystemEvent("service", "Todos los servicios simulados fueron reiniciados"); api.refreshApps(); };
-      root.append(el("div", { class: "banner ok", text: "Sesión root verificada. Estos controles afectan PyStore y Device Info dentro de esta simulación." }), el("h2", { text: "Servicios root" }), list, el("div", { class: "row toolbar" }, [restart]));
+      restart.onclick = () => { Object.keys(services).forEach((id) => { services[id].enabled = true; }); save(); api.logSystemEvent("service", "Todos los servicios operativos fueron reiniciados"); api.refreshApps(); };
+      root.append(el("div", { class: "banner ok", text: "Sesión root verificada. Estos controles afectan PyStore y Device Info." }), el("h2", { text: "Servicios root" }), list, el("div", { class: "row toolbar" }, [restart]));
     },
   };
 
@@ -1175,44 +1388,65 @@ const PyApps = (() => {
     description: "Gestor local de superusuario con estado y políticas por aplicación.",
     render(root, api) {
       if (!api.isAdmin()) {
-        root.append(el("div", { class: "banner warn", text: "Solo una cuenta administradora puede instalar o administrar el gestor root." }));
+        const body = appSurface(root, api, rootManager);
+        body.append(el("div", { class: "banner warn", text: "Solo una cuenta administradora puede administrar las políticas root del sistema." }));
         return;
       }
+      let selectedProfileId = api.profile().id;
       function draw() {
         root.innerHTML = "";
-        const manager = api.rootManager();
-        const status = el("div", { class: "root-manager-status " + (manager.installed ? "installed" : "" ) }, [
-          el("span", { text: manager.installed ? "ROOT / ACTIVO" : "ROOT / NO INSTALADO" }),
-          el("strong", { text: manager.installed ? "Gestor de privilegios listo" : "Instala el gestor para administrar superusuario" }),
-          el("p", { class: "muted", text: manager.installed ? "Canal " + manager.channel + " · versión " + manager.version + " · políticas por aplicación" : "La instalación es una simulación local y no modifica el dispositivo real." }),
+        const body = appSurface(root, api, rootManager);
+        const profiles = api.profiles();
+        const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId) || api.profile();
+        selectedProfileId = selectedProfile.id;
+        const manager = api.rootManagerForProfile(selectedProfile.id);
+        const tabs = el("div", { class: "root-user-tabs" });
+        profiles.forEach((profile) => {
+          const profileManager = api.rootManagerForProfile(profile.id);
+          const tab = el("button", { class: "root-user-tab" + (profile.id === selectedProfile.id ? " selected" : "") }, [
+            el("span", { text: profile.name.slice(0, 2).toUpperCase() }),
+            el("strong", { text: profile.name }),
+            el("small", { text: (profile.role === "admin" ? "ADMIN" : "ESTÁNDAR") + " · " + (profileManager.installed ? "ROOT LISTO" : "SIN ROOT") }),
+          ]);
+          tab.onclick = () => { selectedProfileId = profile.id; draw(); };
+          tabs.appendChild(tab);
+        });
+        const status = el("div", { class: "root-manager-status " + (manager.installed ? "installed" : "") }, [
+          el("span", { text: manager.installed ? "ROOT / CONFIGURADO" : "ROOT / SIN CONFIGURAR" }),
+          el("strong", { text: selectedProfile.name + " · " + (manager.installed ? "políticas listas" : "requiere instalación") }),
+          el("p", { class: "muted", text: "Canal " + manager.channel + " · " + Object.keys(manager.grants || {}).length + " permisos persistentes · perfil " + selectedProfile.username }),
         ]);
-        root.append(status);
+        body.append(el("h2", { text: "Root Manager · cuentas" }), el("p", { class: "muted", text: "Selecciona una cuenta para administrar sus políticas de superusuario sin cambiar de sesión." }), tabs, status);
+        const save = () => api.updateRootManagerForProfile(selectedProfile.id, manager);
         if (!manager.installed) {
-          const install = el("button", { text: "Instalar gestor root" });
+          const install = el("button", { text: "Preparar Root Manager para " + selectedProfile.name });
           install.onclick = () => {
-            manager.installed = true; manager.version = "1.0.0"; manager.installed_at = new Date().toISOString(); manager.grants = {};
-            api.updateRootManager(manager); api.logSystemEvent("root", "Root Manager instalado por " + api.profile().username); api.toast("Gestor root instalado. Las apps ahora solicitarán privilegios."); draw();
+            manager.installed = true; manager.version = "1.1.0"; manager.installed_at = new Date().toISOString(); manager.grants = {};
+            save(); api.logSystemEvent("root", "Root Manager preparado para " + selectedProfile.username + " por " + api.profile().username); api.toast("Políticas root preparadas para " + selectedProfile.name + "."); draw();
           };
-          root.append(el("p", { class: "muted", text: "Después de instalarlo, Terminal, Servicios root y Logs root pedirán acceso mediante una aprobación explícita." }), install);
+          body.append(el("p", { class: "muted", text: "Al prepararlo, las aplicaciones de esta cuenta podrán solicitar aprobación de forma independiente." }), install);
           return;
         }
         const controls = el("div", { class: "row toolbar" });
-        const closeRoot = el("button", { class: "ghost", text: "Cerrar sesión root" });
-        closeRoot.onclick = () => { api.logoutRoot(); api.toast("Sesión root cerrada."); draw(); };
-        const uninstall = el("button", { class: "danger", text: "Desinstalar" });
-        uninstall.onclick = () => api.confirm("Desinstalar gestor root", "Se eliminarán las políticas guardadas de superusuario.", (ok) => { if (!ok) return; api.updateRootManager({ installed: false, grants: {} }); api.logoutRoot(); api.logSystemEvent("root", "Root Manager desinstalado"); draw(); });
-        controls.append(closeRoot, uninstall);
-        const list = el("div", { class: "account-list" });
+        if (selectedProfile.id === api.profile().id) {
+          const closeRoot = el("button", { class: "ghost", text: "Cerrar sesión root actual" });
+          closeRoot.onclick = () => { api.logoutRoot(); api.toast("Sesión root cerrada."); draw(); };
+          controls.appendChild(closeRoot);
+        }
+        const uninstall = el("button", { class: "danger", text: "Quitar políticas de " + selectedProfile.name });
+        uninstall.onclick = () => api.confirm("Quitar Root Manager", "Se eliminarán las políticas guardadas de " + selectedProfile.name + ".", (ok) => { if (!ok) return; api.updateRootManagerForProfile(selectedProfile.id, { installed: false, grants: {} }); if (selectedProfile.id === api.profile().id) api.logoutRoot(); api.logSystemEvent("root", "Políticas root eliminadas para " + selectedProfile.username); draw(); });
+        controls.append(uninstall);
+        const list = el("div", { class: "account-list root-policy-list" });
         api.listApps().filter((app) => app.id !== "rootmanager").forEach((app) => {
           const row = el("div", { class: "account-card" });
           const select = el("select", { class: "modal-input" });
           select.append(el("option", { value: "ask", text: "Preguntar" }), el("option", { value: "allow", text: "Permitir siempre" }));
           select.value = manager.grants[app.id] === "allow" ? "allow" : "ask";
-          select.onchange = () => { if (select.value === "allow") manager.grants[app.id] = "allow"; else delete manager.grants[app.id]; api.updateRootManager(manager); api.logSystemEvent("root", "Política actualizada: " + app.name + " · " + select.value); };
-          row.append(el("div", {}, [el("strong", { text: app.name }), el("span", { class: "muted small", text: "Solicitud de superusuario" })]), select);
+          select.onchange = () => { if (select.value === "allow") manager.grants[app.id] = "allow"; else delete manager.grants[app.id]; save(); api.logSystemEvent("root", "Política de " + selectedProfile.username + ": " + app.name + " · " + select.value); };
+          row.append(el("div", {}, [el("strong", { text: app.name }), el("span", { class: "muted small", text: "Política de " + selectedProfile.name })]), select);
           list.appendChild(row);
         });
-        root.append(el("h2", { text: "Políticas de superusuario" }), el("p", { class: "muted", text: "Permitir siempre evita preguntas futuras para esa aplicación. El acceso continúa siendo una simulación local." }), list, controls);
+        body.append(el("h2", { text: "Políticas de " + selectedProfile.name }), el("p", { class: "muted", text: "Permitir siempre evita aprobaciones futuras solo en esta cuenta." }), list, controls);
       }
       draw();
     },
@@ -1223,7 +1457,7 @@ const PyApps = (() => {
     name: "Logs root",
     icon: "≣",
     permissions: [],
-    description: "Consulta el registro de arranque y actividades del sistema simulado.",
+    description: "Consulta el registro de arranque y actividades del sistema.",
     render(root, api) {
       if (!api.isAdmin() || !api.isRoot()) {
         root.append(el("div", { class: "banner warn", text: "Activa modo root con una cuenta administradora para consultar los registros del sistema." }));
@@ -1245,14 +1479,15 @@ const PyApps = (() => {
     },
   };
 
-  const OPTIONAL_APPS = [snippetsApp, focusApp, orbitalApp, themeStudio, serviceManager, logViewer];
+  const OPTIONAL_APPS = [snippetsApp, focusApp, orbitalApp, voxelforge, themeStudio, serviceManager, logViewer];
   const STORE_CATALOG = [
     { id: "snippets", category: "Productividad", note: "Fragmentos, enlaces y atajos locales." },
     { id: "focus", category: "Bienestar", note: "Sesiones de enfoque sin conexión." },
     { id: "orbital", category: "Juegos", note: "Un desafío de reflejos guardado por perfil." },
+    { id: "voxelforge", category: "Juegos", note: "Sandbox de bloques con exploración, construcción e inventario persistente." },
     { id: "themes", category: "Personalización", note: "Acentos visuales guardados por perfil." },
-    { id: "services", category: "Herramientas root", note: "Panel de servicios simulados para administradores.", requiresAdmin: true },
-    { id: "logs", category: "Herramientas root", note: "Consulta y registra eventos del sistema simulado.", requiresAdmin: true },
+    { id: "services", category: "Herramientas root", note: "Panel de servicios para administradores.", requiresAdmin: true },
+    { id: "logs", category: "Herramientas root", note: "Consulta y registra eventos del sistema.", requiresAdmin: true },
   ];
 
   const pyStore = {
@@ -1265,6 +1500,7 @@ const PyApps = (() => {
       let selectedCategory = "Todas";
       function draw() {
         root.innerHTML = "";
+        const body = appSurface(root, api, pyStore);
         const installed = api.getPreference("installed_apps", []);
         const storeOnline = api.services().store && api.services().store.enabled;
         const categories = ["Todas"].concat(Array.from(new Set(STORE_CATALOG.map((entry) => entry.category))));
@@ -1275,7 +1511,7 @@ const PyApps = (() => {
           filters.appendChild(filter);
         });
         const list = el("div", { class: "store-list" });
-        root.append(el("h2", { text: "PyStore" }), el("p", { class: "muted", text: storeOnline ? "Las instalaciones se guardan solo para " + api.profile().name + ". No descargan contenido externo." : "El servicio de catálogo está detenido. Puedes revisar el catálogo, pero no instalar aplicaciones." }), filters, list);
+        body.append(el("h2", { text: "PyStore" }), el("p", { class: "muted", text: storeOnline ? "Las instalaciones se guardan solo para " + api.profile().name + ". No descargan contenido externo." : "El servicio de catálogo está detenido. Puedes revisar el catálogo, pero no instalar aplicaciones." }), filters, list);
         STORE_CATALOG.filter((entry) => selectedCategory === "Todas" || entry.category === selectedCategory).forEach((entry) => {
           const app = OPTIONAL_APPS.find((candidate) => candidate.id === entry.id);
           const active = installed.indexOf(entry.id) !== -1;
@@ -1289,6 +1525,8 @@ const PyApps = (() => {
           action.onclick = () => {
             const next = active ? installed.filter((id) => id !== entry.id) : installed.concat(entry.id);
             api.setPreference("installed_apps", next);
+            if (active) api.uninstallAppFiles(entry.id);
+            else api.installAppFiles(entry.id, app.name);
             api.logSystemEvent("store", app.name + (active ? " desinstalada desde PyStore" : " instalada desde PyStore"));
             api.toast(active ? app.name + " desinstalada." : app.name + " instalada.");
             setTimeout(() => api.refreshApps(), 220);
@@ -1308,5 +1546,5 @@ const PyApps = (() => {
     return CORE_APPS.concat(OPTIONAL_APPS.filter((app) => ids.indexOf(app.id) !== -1));
   }
 
-  return { get ALL() { return allApps(); }, CORE_APPS, OPTIONAL_APPS, STORE_CATALOG, PERMISSION_LABELS, SIGNATURE, FAKE_VIRUSES, el };
+  return { get ALL() { return allApps(); }, CORE_APPS, OPTIONAL_APPS, STORE_CATALOG, PERMISSION_LABELS, SIGNATURE, FAKE_VIRUSES, el, ensureAppSurface };
 })();

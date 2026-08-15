@@ -174,6 +174,18 @@ const PyStorage = (() => {
     saveGlobalJSON(profileKey(SETTINGS_KEY), all);
   }
 
+  function getPreferenceForProfile(profileId, key, fallback) {
+    const all = readGlobalJSON(SETTINGS_KEY + "__" + profileId, {});
+    return Object.prototype.hasOwnProperty.call(all, key) ? all[key] : fallback;
+  }
+
+  function setPreferenceForProfile(profileId, key, value) {
+    const storageKey = SETTINGS_KEY + "__" + profileId;
+    const all = readGlobalJSON(storageKey, {});
+    all[key] = value;
+    saveGlobalJSON(storageKey, all);
+  }
+
   function defaultRootManager() {
     return { installed: false, version: "0.0", channel: "stable", grants: {}, installed_at: null };
   }
@@ -187,11 +199,20 @@ const PyStorage = (() => {
     setPreference("root_manager", Object.assign(defaultRootManager(), state || {}));
   }
 
+  function getRootManagerForProfile(profileId) {
+    const current = getPreferenceForProfile(profileId, "root_manager", null);
+    return current && typeof current === "object" ? Object.assign(defaultRootManager(), current) : defaultRootManager();
+  }
+
+  function setRootManagerForProfile(profileId, state) {
+    setPreferenceForProfile(profileId, "root_manager", Object.assign(defaultRootManager(), state || {}));
+  }
+
   function defaultServices() {
     return {
       shell: { enabled: true, label: "Shell de PyOS", detail: "Terminal y comandos locales" },
       store: { enabled: true, label: "Catálogo PyStore", detail: "Instalaciones por perfil" },
-      telemetry: { enabled: true, label: "Telemetría Device Info", detail: "Métricas de hardware simulado" },
+      telemetry: { enabled: true, label: "Telemetría Device Info", detail: "Métricas de rendimiento y recursos" },
     };
   }
 
@@ -230,6 +251,19 @@ const PyStorage = (() => {
     return entry;
   }
 
+  function getRecentApps() {
+    const ids = getPreference("recent_apps", []);
+    return Array.isArray(ids) ? ids : [];
+  }
+
+  function recordRecentApp(appId) {
+    const id = String(appId || "");
+    if (!id) return [];
+    const next = [id].concat(getRecentApps().filter((entry) => entry !== id)).slice(0, 8);
+    setPreference("recent_apps", next);
+    return next;
+  }
+
   const DEFAULT_ROOT_PASSWORD = "toor";
 
   const PROTECTED_PATHS = new Set([
@@ -248,9 +282,21 @@ const PyStorage = (() => {
 
   const HOME = "home";
   const TRASH = "home/.papelera";
+  const PROGRAM_FILES = "Program Files";
+  const PROGRAM_FILES_X86 = "Program Files (x86)";
+  const APP_DATA = "AppData";
+  const OPTIONAL_PACKAGE_FILES = {
+    snippets: { folder: "PyOS Snippets", exe: "snippets.exe", arch: "x86" },
+    focus: { folder: "PyOS Focus", exe: "focus.exe", arch: "x86" },
+    orbital: { folder: "Orbital", exe: "orbital.exe", arch: "x86" },
+    themes: { folder: "Theme Studio", exe: "theme-studio.exe", arch: "native" },
+    services: { folder: "Root Services", exe: "root-services.exe", arch: "native" },
+    logs: { folder: "Root Logs", exe: "root-logs.exe", arch: "native" },
+    voxelforge: { folder: "Voxel Forge", exe: "voxel-forge.exe", arch: "native" },
+  };
 
   function hash(str) {
-    // Hash simple (no criptografico, es un juguete) solo para no guardar
+    // Hash local no criptográfico, usado para no guardar
     // la clave de root en texto plano.
     let h = 0;
     for (let i = 0; i < str.length; i++) {
@@ -307,7 +353,7 @@ const PyStorage = (() => {
 
   function defaultConfig() {
     return {
-      version: "1.5.0",
+      version: "2.1.1",
       username: getActiveProfile().username,
       display_name: getActiveProfile().name,
       installed_at: new Date().toISOString(),
@@ -319,6 +365,33 @@ const PyStorage = (() => {
         storage_gb: 1024,
       },
     };
+  }
+
+  function installAppFiles(appId, label) {
+    const pkg = OPTIONAL_PACKAGE_FILES[appId];
+    if (!pkg) return false;
+    const fs = loadFS() || {};
+    const base = pkg.arch === "x86" ? PROGRAM_FILES_X86 : PROGRAM_FILES;
+    [base, base + "/" + pkg.folder, APP_DATA, APP_DATA + "/" + pkg.folder].forEach((path) => {
+      if (!fs[path]) fs[path] = { type: "dir" };
+    });
+    fs[base + "/" + pkg.folder + "/" + pkg.exe] = { type: "file", content: "PYOS EXECUTABLE\napp=" + appId + "\nname=" + (label || pkg.folder) + "\narch=" + pkg.arch + "\n" };
+    fs[base + "/" + pkg.folder + "/manifest.app"] = { type: "file", content: "id=" + appId + "\nname=" + (label || pkg.folder) + "\nsource=PyStore local\n" };
+    fs[APP_DATA + "/" + pkg.folder + "/settings.json"] = { type: "file", content: "{\n  \"app\": \"" + appId + "\",\n  \"profile\": \"" + getActiveProfile().username + "\"\n}\n" };
+    saveFS(fs);
+    return true;
+  }
+
+  function uninstallAppFiles(appId) {
+    const pkg = OPTIONAL_PACKAGE_FILES[appId];
+    if (!pkg) return false;
+    const fs = loadFS() || {};
+    const roots = [(pkg.arch === "x86" ? PROGRAM_FILES_X86 : PROGRAM_FILES) + "/" + pkg.folder, APP_DATA + "/" + pkg.folder];
+    Object.keys(fs).forEach((path) => {
+      if (roots.some((root) => path === root || path.startsWith(root + "/"))) delete fs[path];
+    });
+    saveFS(fs);
+    return true;
   }
 
   function bootstrap() {
@@ -339,27 +412,44 @@ const PyStorage = (() => {
     ensureDir("system/logs");
     ensureDir("system/packages");
     ensureDir("system/config");
+    ensureDir(PROGRAM_FILES);
+    ensureDir(PROGRAM_FILES_X86);
+    ensureDir(APP_DATA);
+    ensureDir(APP_DATA + "/PyOS");
+    ensureDir(APP_DATA + "/PyStore");
+    ensureDir(PROGRAM_FILES + "/PyOS Shell");
+    ensureDir(PROGRAM_FILES + "/Explorador PyOS");
+    ensureDir(PROGRAM_FILES + "/Root Manager");
+    ensureDir(PROGRAM_FILES + "/PyStore");
+    ensureDir(PROGRAM_FILES + "/Device Info");
+    ensureDir(PROGRAM_FILES_X86 + "/Calculadora PyOS");
     ensureDir(HOME);
     ensureDir(HOME + "/Escritorio");
     ensureDir(HOME + "/Documentos");
     ensureDir(HOME + "/Descargas");
+    ensureDir(HOME + "/Imágenes");
+    ensureDir(HOME + "/Música");
+    ensureDir(HOME + "/Vídeos");
+    ensureDir(HOME + "/Juegos");
+    ensureDir(HOME + "/Proyectos");
+    ensureDir(HOME + "/Configuración");
     ensureDir(TRASH);
 
     ensureFile(
       HOME + "/Documentos/leeme.txt",
       "Bienvenido a PyOS Web.\n\n" +
-        "Esta es tu carpeta personal simulada, guardada en el almacenamiento\n" +
+        "Esta es tu carpeta personal, guardada en el almacenamiento\n" +
         "de tu navegador (localStorage) -- no toca ningun archivo real de tu\n" +
         "telefono o computadora.\n\n" +
-        "Sos un usuario normal: no podes tocar el sistema. Para eso abri la\n" +
-        "Terminal y escribi 'su' (clave por defecto: " + DEFAULT_ROOT_PASSWORD + ").\n"
+        "Sos un usuario normal: no podes tocar el sistema. Para tareas root\n" +
+        "abre Root Manager y aprueba la solicitud de la aplicación correspondiente.\n"
     );
     ensureFile(
       "system/motd.txt",
       "PyOS Web -- mensaje del dia\n" +
         "----------------------------\n" +
         "Este archivo vive en system/motd.txt. Como usuario normal no lo\n" +
-        "podes tocar. Con 'su' en la Terminal si.\n"
+        "podes tocar. Solicita acceso desde Root Manager si lo necesitas.\n"
     );
     ensureFile(
       "system/hosts.txt",
@@ -368,8 +458,8 @@ const PyStorage = (() => {
     );
     ensureFile(
       "system/kernel.sys",
-      "PYOS-WEB-KERNEL-SIMULADO\n" +
-        "Representa el 'nucleo' de PyOS (no hace nada real). Si lo borras\n" +
+      "PYOS-WEB-KERNEL\n" +
+        "Núcleo de PyOS. Si lo borras\n" +
         "-- incluso como root -- el proximo arranque te va a recibir con un\n" +
         "pantallazo azul y una opcion para repararlo.\n"
     );
@@ -377,15 +467,24 @@ const PyStorage = (() => {
       "system/boot.cfg",
       "[boot]\nmodo=normal\nusuario_por_defecto=admin\n"
     );
-    ensureFile("system/drivers/video.drv", "driver de video simulado\n");
-    ensureFile("system/drivers/input.drv", "driver de teclado/mouse simulado\n");
-    ensureFile("system/release.txt", "PyOS Web 1.3\nCanal: estable\nArquitectura: navegador-simulado\n");
+    ensureFile("system/drivers/video.drv", "driver de video PyOS\n");
+    ensureFile("system/drivers/input.drv", "driver de entrada PyOS\n");
+    ensureFile("system/release.txt", "PyOS Web\nCanal: estable\nArquitectura: navegador\n");
     ensureFile("system/logs/boot.log", "[boot] perfil local cargado\n[boot] servicios preparados\n[boot] interfaz disponible\n");
     ensureFile("system/logs/activity.log", "[system] historial de actividad de PyOS\n");
     ensureFile("system/services/shell.svc", "servicio=shell\nestado=activo\ninterfaz=desktop,touch,console\n");
     ensureFile("system/services/store.svc", "servicio=pystore\nestado=activo\nmodo=catalogo_local\n");
     ensureFile("system/config/ui.cfg", "[ui]\ntema=graphite\nidioma=es\nanimaciones=moderadas\n");
     ensureFile("system/packages/core.pkg", "paquete=pyos-core\nversion=1.3\nproteccion=critica\n");
+    ensureFile(PROGRAM_FILES + "/PyOS Shell/pyos-shell.exe", "PYOS EXECUTABLE\napp=shell\nrole=entorno principal\n");
+    ensureFile(PROGRAM_FILES + "/Explorador PyOS/explorer.exe", "PYOS EXECUTABLE\napp=explorer\nrole=archivos y carpetas\n");
+    ensureFile(PROGRAM_FILES + "/Root Manager/root-manager.exe", "PYOS EXECUTABLE\napp=rootmanager\nrole=políticas de privilegios\n");
+    ensureFile(PROGRAM_FILES + "/PyStore/pystore.exe", "PYOS EXECUTABLE\napp=pystore\nrole=catálogo local\n");
+    ensureFile(PROGRAM_FILES + "/Device Info/device-info.exe", "PYOS EXECUTABLE\napp=deviceinfo\nrole=telemetría de recursos\n");
+    ensureFile(PROGRAM_FILES_X86 + "/Calculadora PyOS/calculator.exe", "PYOS EXECUTABLE\napp=calculator\narch=x86\n");
+    ensureFile(APP_DATA + "/PyOS/profile.json", "{\n  \"user\": \"" + getActiveProfile().username + "\",\n  \"role\": \"" + getActiveProfile().role + "\"\n}\n");
+    ensureFile(APP_DATA + "/PyStore/catalog.json", "{\n  \"source\": \"local\",\n  \"profile\": \"" + getActiveProfile().username + "\"\n}\n");
+    ensureFile(HOME + "/Configuración/perfil.ini", "[profile]\nname=" + getActiveProfile().name + "\nusername=" + getActiveProfile().username + "\nrole=" + getActiveProfile().role + "\n");
 
     saveFS(fs);
 
@@ -394,8 +493,8 @@ const PyStorage = (() => {
     } else {
       const cfg = getConfig();
       if (!cfg.device_profile) cfg.device_profile = defaultConfig().device_profile;
-      if (cfg.version !== "1.5.0") {
-        cfg.version = "1.5.0";
+      if (cfg.version !== "2.1.1") {
+        cfg.version = "2.1.1";
         setConfig(cfg);
       }
     }
@@ -701,12 +800,18 @@ const PyStorage = (() => {
     isAdmin,
     getPreference,
     setPreference,
+    getPreferenceForProfile,
+    setPreferenceForProfile,
     getRootManager,
     setRootManager,
+    getRootManagerForProfile,
+    setRootManagerForProfile,
     getServices,
     setServices,
     getSystemEvents,
     logSystemEvent,
+    getRecentApps,
+    recordRecentApp,
     bootstrap,
     checkIntegrity,
     recordIntegrity,
@@ -737,6 +842,8 @@ const PyStorage = (() => {
     walkHome,
     homeFileCount,
     estimateBytes,
+    installAppFiles,
+    uninstallAppFiles,
     joinPath,
     dirname,
     basename,

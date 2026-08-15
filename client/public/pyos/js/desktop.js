@@ -99,12 +99,10 @@ function startDesktop(buildApi, sys) {
     const dh = desktop.clientHeight;
     if (dw < 10 || dh < 10) return;
     windows.forEach((w) => {
-      const rect = w.frame.getBoundingClientRect();
-      const deskRect = desktop.getBoundingClientRect();
-      let width = Math.min(w.width, dw - 10);
-      let height = Math.min(w.height, dh - 10);
-      width = Math.max(260, width);
-      height = Math.max(180, height);
+      const minWidth = Math.min(300, Math.max(220, dw - 16));
+      const minHeight = Math.min(200, Math.max(160, dh - 16));
+      let width = Math.max(minWidth, Math.min(w.width, dw - 16));
+      let height = Math.max(minHeight, Math.min(w.height, dh - 16));
       let x = Math.min(w.x, dw - width);
       let y = Math.min(w.y, dh - height);
       x = Math.max(0, x);
@@ -136,10 +134,12 @@ function startDesktop(buildApi, sys) {
   function openAppWindow(app, args) {
     const id = nextWinId++;
     cascade = (cascade + 1) % 8;
-    const x = 40 + cascade * 28;
-    const y = 30 + cascade * 24;
-    const width = 620;
-    const height = 440;
+    const availableWidth = Math.max(280, desktop.clientWidth - 24);
+    const availableHeight = Math.max(200, desktop.clientHeight - 24);
+    const width = Math.min(680, availableWidth);
+    const height = Math.min(500, availableHeight);
+    const x = Math.max(8, Math.min(28 + cascade * 26, availableWidth - width + 8));
+    const y = Math.max(8, Math.min(22 + cascade * 22, availableHeight - height + 8));
 
     const frame = el("div", { class: "app-window" });
     frame.style.left = x + "px";
@@ -153,7 +153,7 @@ function startDesktop(buildApi, sys) {
     const btnClose = el("button", { class: "win-btn close", text: "\u00d7", title: "Cerrar" });
     titlebar.append(titleLabel, btnMin, btnClose);
 
-    const content = el("div", { class: "app-content" });
+    const content = el("div", { class: "app-content desktop-native-app" });
     const grip = el("div", { class: "resize-grip" });
     frame.append(titlebar, content, grip);
     windowsLayer.appendChild(frame);
@@ -169,9 +169,11 @@ function startDesktop(buildApi, sys) {
       onDestroy: (cb) => winState.destroyCallbacks.push(cb),
     };
     const api = buildApi(app.id, args, hooks);
+    PyStorage.recordRecentApp(app.id);
 
     try {
       app.render(content, api);
+      PyApps.ensureAppSurface(content, api, app);
     } catch (e) {
       content.appendChild(el("div", { class: "error-box", text: "La app fallo al iniciar: " + e }));
       console.error(e);
@@ -195,6 +197,7 @@ function startDesktop(buildApi, sys) {
 
     focusWindow(id);
     refreshTaskbar();
+    requestAnimationFrame(clampAllWindows);
   }
 
   function makeDraggable(frame, handle, winState) {
@@ -239,8 +242,10 @@ function startDesktop(buildApi, sys) {
     });
     window.addEventListener("mousemove", (e) => {
       if (!resizing) return;
-      let nw = Math.max(300, origW + (e.clientX - startX));
-      let nh = Math.max(200, origH + (e.clientY - startY));
+      const maxWidth = Math.max(220, desktop.clientWidth - winState.x - 8);
+      const maxHeight = Math.max(160, desktop.clientHeight - winState.y - 8);
+      let nw = Math.min(maxWidth, Math.max(Math.min(300, maxWidth), origW + (e.clientX - startX)));
+      let nh = Math.min(maxHeight, Math.max(Math.min(200, maxHeight), origH + (e.clientY - startY)));
       winState.width = nw;
       winState.height = nh;
       frame.style.width = nw + "px";

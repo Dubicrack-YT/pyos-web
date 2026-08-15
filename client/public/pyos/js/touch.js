@@ -24,7 +24,7 @@ function startTouch(buildApi, sys) {
   const backBtn = el("button", { class: "back-btn", text: "\u2190 Inicio" });
   const appTitle = el("span", { class: "touch-app-title" });
   appBar.append(backBtn, appTitle);
-  const appContent = el("div", { class: "touch-app-content" });
+  const appContent = el("div", { class: "touch-app-content touch-native-app" });
   appView.append(appBar, appContent);
 
   shell.append(statusbar, home, appView);
@@ -91,8 +91,10 @@ function startTouch(buildApi, sys) {
       onDestroy: (cb) => currentApp.destroyCallbacks.push(cb),
     };
     const api = buildApi(app.id, args, hooks);
+    PyStorage.recordRecentApp(app.id);
     try {
       app.render(appContent, api);
+      PyApps.ensureAppSurface(appContent, api, app);
     } catch (e) {
       appContent.appendChild(el("div", { class: "error-box", text: "La app fallo al iniciar: " + e }));
       console.error(e);
