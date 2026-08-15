@@ -1,6 +1,6 @@
 /* Diseño PyOS: consola lateral + panel operativo; verde fósforo reservado a estados y acciones. */
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownRight, ArrowUpRight, Check, ChevronRight, CircleDot, Clipboard, ExternalLink, MonitorCog, RotateCcw, ShieldCheck, Smartphone, TerminalSquare, Wifi } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Check, ChevronRight, CircleDot, Clipboard, ExternalLink, MonitorCog, RotateCcw, ShieldCheck, Smartphone, TerminalSquare, Trash2, Wifi, X } from "lucide-react";
 
 const APP_PATH = "./pyos/index.html";
 const ASSETS = {
@@ -17,7 +17,8 @@ function StatusLine({ label, value }: { label: string; value: string }) {
 export default function Home() {
   const [copied, setCopied] = useState(false);
   const [clock, setClock] = useState("");
-  const [resetState, setResetState] = useState<"idle" | "working" | "done" | "error">("idle");
+  const [resetOpen, setResetOpen] = useState(false);
+  const [resetStatus, setResetStatus] = useState("");
   const installUrl = useMemo(() => typeof window === "undefined" ? APP_PATH : new URL(APP_PATH, window.location.href).toString(), []);
 
   useEffect(() => {
@@ -38,24 +39,23 @@ export default function Home() {
       window.prompt("Copia este enlace para instalar PyOS:", installUrl);
     }
   };
-
   const clearPyOSData = async () => {
-    if (!window.confirm("Se eliminarán los datos locales de PyOS en este navegador. Esta acción no afecta otros sitios. ¿Deseas continuar?")) return;
-
-    setResetState("working");
     try {
-      Object.keys(window.localStorage)
-        .filter((key) => key.startsWith("pyos_"))
-        .forEach((key) => window.localStorage.removeItem(key));
-
+      const keys: string[] = [];
+      for (let index = 0; index < window.localStorage.length; index += 1) {
+        const key = window.localStorage.key(index);
+        if (key && key.startsWith("pyos_")) keys.push(key);
+      }
+      keys.forEach((key) => window.localStorage.removeItem(key));
       if ("caches" in window) {
         const cacheKeys = await window.caches.keys();
         await Promise.all(cacheKeys.filter((key) => key.startsWith("pyos-web-")).map((key) => window.caches.delete(key)));
       }
-
-      setResetState("done");
+      setResetOpen(false);
+      setResetStatus("Datos de PyOS eliminados. Al abrirlo de nuevo, comenzará como una instalación limpia.");
     } catch {
-      setResetState("error");
+      setResetOpen(false);
+      setResetStatus("No se pudieron eliminar todos los datos. Cierra PyOS e inténtalo nuevamente desde este navegador.");
     }
   };
 
@@ -80,7 +80,7 @@ export default function Home() {
               <h1 id="hero-title">Un sistema pequeño.<br />Una sesión completa.</h1>
               <p>PyOS es una experiencia web instalable para abrir, explorar y conservar en el teléfono.</p>
             </div>
-            <div className="rail-details"><StatusLine label="canal" value="estable" /><StatusLine label="versión" value="v2.1.1" /><StatusLine label="reloj" value={clock || "--:--"} /></div>
+            <div className="rail-details"><StatusLine label="canal" value="estable" /><StatusLine label="versión" value="v2.1.2" /><StatusLine label="reloj" value={clock || "--:--"} /></div>
             <a href="#instalar" className="rail-jump">Ver instalación <ArrowDownRight size={17} /></a>
           </aside>
 
@@ -125,18 +125,20 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="reset-operation" aria-labelledby="reset-title">
+        <section className="reset-operation" id="reiniciar" aria-labelledby="reset-title">
           <aside className="reset-rail"><span>03 / Reiniciar</span><div className="boot-emblem">↺<i>_</i></div><p>Datos locales de PyOS</p><StatusLine label="alcance" value="este navegador" /><StatusLine label="acción" value="irreversible" /></aside>
           <div className="reset-panel">
             <p className="eyebrow">Mantenimiento / almacenamiento local</p>
             <h2 id="reset-title">Empezar<br />desde cero.</h2>
             <p>Elimina todos los perfiles, archivos, aplicaciones instaladas, permisos, mundos guardados y preferencias de PyOS en este navegador. No afecta otros sitios ni archivos del dispositivo.</p>
-            <div className="reset-actions"><button type="button" className="reset-action" onClick={clearPyOSData} disabled={resetState === "working"}><RotateCcw size={18} />{resetState === "working" ? "Borrando datos…" : "Borrar datos de PyOS"}</button>{resetState === "done" && <p className="reset-result" role="status"><Check size={16} /> Datos eliminados. PyOS comenzará como una sesión nueva.</p>}{resetState === "error" && <p className="reset-result reset-error" role="status">No se pudieron eliminar todos los datos. Inténtalo de nuevo.</p>}</div>
+            <button type="button" className="reset-action" onClick={() => { setResetStatus(""); setResetOpen(true); }}><Trash2 size={18} /> Borrar datos de PyOS</button>
+            {resetStatus && <p className="reset-status" role="status"><Check size={15} /> {resetStatus}</p>}
           </div>
         </section>
       </main>
 
       <footer className="site-footer"><div className="footer-brand"><img src={ASSETS.logo} alt="" /><span>PyOS / WEB BUILD</span></div><p>Aplicación instalable · entorno cliente · estado operativo</p><a href={APP_PATH} target="_blank" rel="noreferrer">Abrir sistema <ArrowUpRight size={14} /></a></footer>
+      {resetOpen && <div className="reset-dialog-backdrop" role="presentation"><section className="reset-dialog" role="dialog" aria-modal="true" aria-labelledby="reset-dialog-title"><button type="button" className="reset-dialog-close" aria-label="Cancelar" onClick={() => setResetOpen(false)}><X size={17} /></button><RotateCcw size={23} className="reset-dialog-icon" /><p>PYOS / CONFIRMACIÓN</p><h2 id="reset-dialog-title">¿Borrar todos los datos?</h2><span>Se eliminarán cuentas, archivos, permisos, apps instaladas y partidas locales de este navegador. Esta acción no se puede deshacer.</span><div><button type="button" className="copy-link" onClick={() => setResetOpen(false)}>Cancelar</button><button type="button" className="reset-confirm" onClick={clearPyOSData}>Sí, borrar todo</button></div></section></div>}
     </div>
   );
 }
