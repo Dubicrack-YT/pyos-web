@@ -1,4 +1,4 @@
-/* Diseño PyOS original: terminal utilitaria contemporánea, negro grafito y verde fósforo como señal de estado. */
+/* Diseño PyOS: terminal utilitaria contemporánea, negro grafito y verde fósforo como señal de estado. */
 @import "tailwindcss";
 @import "tw-animate-css";
 @custom-variant dark (&:is(.dark *));
