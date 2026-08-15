@@ -1,12 +1,12 @@
-/* Código y estructura originales de PyOS; sólo se ajustan rutas relativas de publicación. */
+/* Diseño PyOS: consola lateral + panel operativo; verde fósforo reservado a estados y acciones. */
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDownRight, ArrowUpRight, Check, ChevronRight, CircleDot, Clipboard, ExternalLink, MonitorCog, ShieldCheck, Smartphone, TerminalSquare, Wifi } from "lucide-react";
 
-const APP_PATH = "./pyos/index.html";
+const APP_PATH = "/pyos/index.html";
 const ASSETS = {
   logo: "./pyos/icons/icon-192.png",
   hero: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1800&q=85",
-  system: "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1400&q=85",
+  system: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1500&q=85",
   install: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1500&q=85",
 };
 
@@ -17,7 +17,7 @@ function StatusLine({ label, value }: { label: string; value: string }) {
 export default function Home() {
   const [copied, setCopied] = useState(false);
   const [clock, setClock] = useState("");
-  const installUrl = useMemo(() => typeof window === "undefined" ? APP_PATH : new URL(APP_PATH, window.location.href).href, []);
+  const installUrl = useMemo(() => typeof window === "undefined" ? APP_PATH : `${window.location.origin}${APP_PATH}`, []);
 
   useEffect(() => {
     const tick = () => setClock(new Date().toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" }));
@@ -73,7 +73,7 @@ export default function Home() {
               <div className="action-row"><button type="button" className="primary-action" onClick={openPyOS}><span>Iniciar PyOS</span><ArrowUpRight size={19} /></button><button type="button" className="text-action" onClick={openConsole}>Probar Consola <ChevronRight size={18} /></button><a href="#instalar" className="text-action">Cómo instalar <ChevronRight size={18} /></a></div>
             </div>
             <div className="live-window" aria-label="Vista previa interactiva de PyOS">
-              <div className="window-chrome"><div className="window-dots"><i /><i /><i /></div><span><b>LAUNCH / </b>./pyos/index.html</span><a href={APP_PATH} target="_blank" rel="noreferrer" aria-label="Abrir PyOS en otra pestaña"><ExternalLink size={14} /></a></div>
+              <div className="window-chrome"><div className="window-dots"><i /><i /><i /></div><span><b>LAUNCH / </b>/pyos/index.html</span><a href={APP_PATH} target="_blank" rel="noreferrer" aria-label="Abrir PyOS en otra pestaña"><ExternalLink size={14} /></a></div>
               <iframe title="Vista previa de PyOS" src={APP_PATH} className="pyos-frame" loading="eager" />
             </div>
           </div>
@@ -96,10 +96,10 @@ export default function Home() {
           <div className="install-panel">
             <div className="install-visual"><img src={ASSETS.install} alt="Panel operativo de instalación de PyOS" /><span className="install-number">02</span></div>
             <div className="install-body">
-              <p className="eyebrow">Instalación / PWA</p><h2 id="install-title">Instala PyOS<br />en la pantalla<br />de inicio.</h2>
-              <p>Abre PyOS desde el móvil y usa el menú del navegador para añadirlo a la pantalla de inicio. Después funcionará como una aplicación independiente con tus perfiles locales.</p>
-              <div className="install-actions"><button type="button" className="secondary-action" onClick={openPyOS}><Smartphone size={18} /> Abrir para instalar</button><button type="button" className="copy-link" onClick={copyInstallUrl}>{copied ? <Check size={17} /> : <Clipboard size={17} />}{copied ? "Enlace copiado" : "Copiar enlace"}</button></div>
-              <p className="install-note"><span>Nota</span> La instalación se realiza desde la página completa de PyOS, no desde la vista previa.</p>
+            <p className="eyebrow">Instalación / PWA</p><h2 id="install-title">Instala PyOS<br />en la pantalla<br />de inicio.</h2>
+            <p>Abre PyOS desde el móvil y usa el menú del navegador para añadirlo a la pantalla de inicio. Después funcionará como una aplicación independiente con tus perfiles locales.</p>
+            <div className="install-actions"><button type="button" className="secondary-action" onClick={openPyOS}><Smartphone size={18} /> Abrir para instalar</button><button type="button" className="copy-link" onClick={copyInstallUrl}>{copied ? <Check size={17} /> : <Clipboard size={17} />}{copied ? "Enlace copiado" : "Copiar enlace"}</button></div>
+            <p className="install-note"><span>Nota</span> La instalación se realiza desde la página completa de PyOS, no desde la vista previa.</p>
             </div>
           </div>
         </section>
