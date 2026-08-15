@@ -1,82 +1,85 @@
 # Dirección de diseño: PyOS Web
 
-## Tres aproximaciones exploradas
+## Tres enfoques explorados
 
-### 1. Consola de mantenimiento industrial
-**Muy breve:** Una estación de trabajo sobria y técnica, inspirada en terminales de diagnóstico y paneles de control. Transmite control, calma y trazabilidad.
+### Archivo de sistema
 
-**Probabilidad:** 0.07
+**Muy breve introducción:** Una interfaz editorial inspirada en pantallas de arranque y utilidades de terminal, sobria y funcional. Convierte el acceso a PyOS en un objeto digital claramente utilitario.
 
-### 2. Archivo digital monocromo
-**Muy breve:** Un archivo documental de alto contraste, con tipografía editorial y detalles de comandos discretos. Prioriza legibilidad, jerarquía y permanencia.
+**Probabilidad:** 0.06
 
-**Probabilidad:** 0.03
+### Laboratorio de bolsillo
 
-### 3. Sala de operaciones phosphor-green
-**Muy breve:** Una consola terminal contemporánea de fondo profundo, verde fósforo reservado y capas de información. Hace que PyOS parezca un sistema operativo web tangible sin depender de neón excesivo.
+**Muy breve introducción:** Un portal cálido y táctil que presenta PyOS como un pequeño ordenador experimental para el teléfono. La composición prioriza una tarjeta de dispositivo y detalles de hardware ligero.
+
+**Probabilidad:** 0.04
+
+### Manual de operaciones
+
+**Muy breve introducción:** Un sitio de inspiración brutalista-editorial que combina tipografía monoespaciada, jerarquías de documentación y un acceso directo al sistema. Se siente como el manual de un artefacto de software.
 
 **Probabilidad:** 0.08
 
-## Dirección elegida: Sala de operaciones phosphor-green
+## Enfoque elegido: Archivo de sistema
 
 ### Movimiento de diseño
-**Brutalismo editorial aplicado a una terminal UNIX contemporánea.** La composición privilegia la información estructurada, los márgenes funcionales y un acabado de monitor técnico, no una simulación nostálgica.
+
+**Terminal utilitaria contemporánea** con referencias discretas a las interfaces de sistema de finales de los noventa, evitando la nostalgia literal.
 
 ### Principios centrales
 
-1. **Jerarquía operativa:** cada bloque se lee como estado, comando o resultado.
-2. **Contraste deliberado:** tinta casi negra, superficies carbón y el verde PyOS únicamente para foco, estado y acción.
-3. **Asimetría útil:** el contenido se distribuye como una consola modular con una columna de telemetría, no como una página promocional centrada.
-4. **Respuesta humana:** los controles conservan foco visible, tamaños táctiles adecuados y movimiento breve que confirma acciones.
+1. La jerarquía visual sigue la lógica de un panel de estado: identidad, disponibilidad y acción.
+2. La interfaz es sobria, de alto contraste y de lectura inmediata, sin decoración superflua.
+3. La aplicación PyOS es el centro del producto; el portal existe para explicarla, abrirla e instalarla.
+4. Los detalles de retícula, cursores y separadores transmiten precisión técnica sin obstaculizar la accesibilidad.
 
 ### Filosofía de color
 
-El fondo de grafito azulado reduce la fatiga visual y ofrece profundidad; el marfil frío garantiza lectura prolongada. El verde fósforo se reserva como señal de disponibilidad, cursor y confirmación para conservar su valor semántico. Los acentos ámbar y rojo se usan sólo para advertencias y estados detenidos.
+Una base de negro grafito y grises de papel térmico permite que el verde fósforo de PyOS sea una señal de estado, no un fondo ornamental. La firma cromática es **verde fósforo PyOS (`#39ff14`)**, reservado para acciones principales, focos e indicadores de disponibilidad.
 
-### Paradigma de distribución
+### Paradigma de composición
 
-Una **consola de exploración lateral**: cabecera de comando, barra de estado, área editorial dominante a la izquierda y un rail de telemetría a la derecha. En móviles, el rail se vuelve un bloque desplegable al final, conservando una lectura lineal clara.
+Una estructura asimétrica de **consola lateral + panel operativo**. A la izquierda, una columna de identidad y diagnóstico; a la derecha, una ventana física de lanzamiento que domina la pantalla. En móvil, los paneles se apilan conservando el orden operativo.
 
 ### Elementos distintivos
 
-1. Un cursor de bloque verde que pulsa junto a las líneas de comando.
-2. Retículas de exploración y números de línea discretos en los bordes de las secciones.
-3. Etiquetas de estado en mayúsculas con bordes cuadrados y una línea de barrido tenue.
+1. Una línea de estado con punto de actividad y texto de versión.
+2. Marcos técnicos con esquinas recortadas y numeración de secciones.
+3. Un símbolo de cursor/bloque de arranque como emblema de la marca.
 
 ### Filosofía de interacción
 
-La interfaz responde como una consola segura: cada control ofrece estado inmediato, foco inequívoco y realimentación textual. Las acciones no implementadas se identifican con honestidad como demostraciones visuales, sin fingir acceso al sistema.
+Toda interacción confirma una acción concreta: abrir el sistema, instalarlo o consultar una nota. Los estados de foco se muestran como señales de terminal y los botones responden con una breve compresión.
 
 ### Animación
 
-El cursor parpadea lentamente y las secciones aparecen con desplazamientos verticales de 8 px y una cadencia de 55 ms. Las transiciones duran entre 140 y 220 ms con curva `cubic-bezier(0.23, 1, 0.32, 1)`. La animación se desactiva con `prefers-reduced-motion`.
+Las entradas iniciales se escalonan entre 40 y 80 ms con opacidad y traslación corta. El indicador de actividad pulsa suavemente. Las transiciones usan `cubic-bezier(0.23, 1, 0.32, 1)` y duran entre 140 y 220 ms. Se desactivan para `prefers-reduced-motion`.
 
 ### Sistema tipográfico
 
-**Space Grotesk** proporciona titulares densos y contemporáneos; **IBM Plex Mono** define comandos, metadatos y controles. Los titulares usan peso 600–700; el texto de lectura usa 400–500; los datos técnicos usan tamaño 12–14 px con espaciado generoso.
+**Space Grotesk** para titulares y control de jerarquía; **IBM Plex Mono** para estado, etiquetas y datos técnicos. Los titulares usan peso 600–700, mientras los textos funcionales mantienen 400–500 con interlineado generoso.
 
 ### Esencia de marca
 
-**PyOS Web transforma el estado de un sistema en una interfaz clara para quienes necesitan operar sin perder contexto.** Personalidad: precisa, independiente y serena.
+**PyOS es un pequeño sistema operativo web instalable para explorar una experiencia de escritorio desde cualquier dispositivo.** Personalidad: preciso, lúdico y autosuficiente.
 
 ### Voz de marca
 
-Los titulares son directos y operativos; las acciones nombran su resultado y los mensajes evitan promesas vagas.
+Los titulares son directos, técnicos y tranquilos. Los CTA describen la acción exacta, no hacen promesas genéricas.
 
-> “Un sistema legible es un sistema controlable.”
+> "Inicia una sesión PyOS en el navegador."
 
-> “Abrir consola de estado”
+> "Instala el sistema para abrirlo desde tu pantalla de inicio."
 
-### Logotipo y símbolo
+### Logotipo y marca
 
-Un símbolo sin texto formado por un cursor de bloque atravesando tres segmentos de circuito: reconocible en tamaños pequeños y preparado para favicon. El logotipo usa letras monoespaciadas construidas con cortes rectangulares, no una fuente por defecto.
+Un cursor de bloque escalonado dentro de una ventana mínima; no contiene texto y se entiende incluso en formato de favicon. El logotipo combina ese símbolo con una composición de caracteres monoespaciados para “PyOS”.
 
-### Color distintivo
+## Style Decisions
 
-**Verde PyOS `#B8FF5C`**: una señal verde amarillenta de alta visibilidad, reservada para control y actividad confirmada.
-
-## Decisiones de estilo
-
-- El verde PyOS `#B8FF5C` nunca se utiliza como un fondo decorativo de sección completa; funciona como señal, cursor, estado, acción, traza, numeral o retícula activa.
-- Cada sección principal resuelve la gramática de consola mediante una cabecera de comando, cuerpo indexado, estado o resultado y, cuando aporta contexto, un rail de telemetría.
-- El wordmark PYOS/WEB incorpora cortes rectangulares visibles para leerse como una marca construida de sistema operativo y no como texto monoespaciado por defecto.
+- El verde fósforo `#39ff14` se reserva para acciones, disponibilidad, numeración, cursores e indicadores operativos; los titulares se mantienen en blanco térmico y gris.
+- La ventana de lanzamiento es el objeto de producto dominante: incorpora un marco operativo explícito y una vista previa directa de PyOS.
+- El logotipo usa un emblema de ventana/cursor y una construcción monoespaciada de identidad de arranque, no una etiqueta tipográfica convencional.
+- Cada sección conserva la lógica de consola lateral + panel operativo: diagnóstico a un lado y un objeto o acción reconocible de PyOS al otro.
+- Las superficies visuales priorizan perfiles, ventanas, componentes y estados reconocibles del sistema frente a ilustraciones abstractas de tecnología.
+- La voz de marca describe una acción concreta del sistema en español técnico y tranquilo, sin titulares aspiracionales de marketing.

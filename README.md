@@ -1,29 +1,82 @@
 # PyOS Web
 
-PyOS Web es una interfaz estática de referencia inspirada en una consola de operaciones contemporánea. Su experiencia visual emplea superficies de grafito, tipografía técnica y el color **Verde PyOS** como señal de estado y acción. El sitio se adapta a pantallas pequeñas, medianas y grandes sin requerir autenticación, secretos o un servidor de aplicación.
+PyOS Web es una simulación de sistema operativo que funciona completamente en el navegador. Se publica como una PWA bajo la ruta `/pyos` y se acompaña de un portal de lanzamiento para abrirla e instalarla.
 
-## Publicación independiente
+## Novedades de la versión 1.5
 
-Este repositorio está preparado para publicarse de forma independiente en GitHub Pages. El flujo de trabajo `.github/workflows/deploy-pages.yml` compila la interfaz con una base relativa y publica el contenido estático de `dist/public` en cada envío a la rama `main`.
+| Área | Implementación |
+|---|---|
+| Perfiles | Cuentas locales simuladas, con archivos, permisos y preferencias aisladas por perfil. |
+| Modos | Experiencias **Escritorio**, **Táctil** y **Consola**. |
+| Consola | Interfaz de sala para pantallas grandes, teclado y controles compatibles con Gamepad API. |
+| Terminal | Comandos `profiles`, `profile`, `status`, `mode` y cambio de interfaz desde el sistema. |
+| PWA | Caché versionada y actualización de recursos para evitar versiones antiguas en dispositivos móviles. |
+| Usabilidad | Explorador con selección y apertura explícitas, panel de cuentas y permisos por rol. |
+| Apps | Centro de control, Cuentas, Tareas y Bitácora para cada perfil local. |
+| Sistema | Exploración root, editor controlado de archivos del sistema y jerarquía de servicios, registros y paquetes simulados. |
+| PyStore | Catálogo local por perfil con instalación y desinstalación de aplicaciones opcionales. |
+| Device Info | CPU AMD Ryzen 7 7800X3D, GPU NVIDIA GeForce RTX 4070 SUPER, 32 GB DDR5 y 1 TB NVMe simulados con telemetría dinámica. |
+| Catálogo ampliado | Filtros de PyStore y aplicaciones opcionales de personalización y herramientas root. |
+| Root Manager | Gestor local de superusuario con instalación simulada, solicitudes por aplicación y políticas persistentes. |
+| Operaciones | Logs root registra arranque, privilegios, servicios, archivos root e instalaciones de PyStore. |
 
-Para usarlo, habilita GitHub Pages con la fuente **GitHub Actions** en la configuración del repositorio. El primer envío a `main` activará el flujo y generará la URL pública de Pages.
+## Ejecutar localmente
 
-## Desarrollo local
-
-Instala las dependencias y ejecuta el servidor de desarrollo:
+Este proyecto utiliza Node.js y pnpm.
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Para validar la compilación estática, usa:
+Para comprobar tipos y generar la compilación de producción:
 
 ```bash
-pnpm exec vite build --base="./"
+pnpm check
+pnpm build
 ```
 
-## Nota de seguridad
+## Usar PyOS
 
-PyOS Web es un sitio estático y no contiene un panel de administración ni autenticación real. Una interfaz de administrador segura requiere un proveedor de identidad y un backend que valide permisos en el servidor; ocultar elementos en el navegador no protege funciones ni datos.
+Abre `/pyos/index.html` desde el sitio. En el primer inicio se puede elegir una cuenta local o crear otra. Después, selecciona un modo de uso:
 
+| Modo | Uso previsto |
+|---|---|
+| Escritorio | Mouse, teclado y ventanas flotantes. |
+| Táctil | Teléfonos y tabletas; una app por vez. |
+| Consola | Televisor, control o teclado; navegación con flechas, Aceptar y Volver. |
+
+La Terminal incluye una guía completa mediante `help`. Los comandos específicos de esta versión son:
+
+```text
+profiles
+profile
+profile add <nombre>
+profile switch
+status
+mode
+mode switch
+```
+
+## Estructura principal
+
+```text
+client/src/             Portal web de PyOS
+client/public/pyos/     PWA autónoma de PyOS
+client/public/pyos/js/  Núcleo, perfiles, modos y aplicaciones
+client/public/pyos/sw.js  Trabajador de servicio y caché offline
+```
+
+## Publicación
+
+La PWA debe desplegarse mediante HTTPS. Tras publicar una actualización, abre PyOS una vez con Internet para permitir que el trabajador de servicio actualice su caché. Si un dispositivo muestra una versión antigua, cierra la app y vuelve a abrirla; como último recurso, elimina la instalación y vuelve a añadirla desde la URL publicada.
+
+## Repositorio propuesto
+
+El nombre preparado para GitHub es:
+
+```text
+Dubicrack-YT/pyos-web
+```
+
+La aplicación es una simulación local: las cuentas no son autenticación real y los datos permanecen en el almacenamiento del navegador.
