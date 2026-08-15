@@ -1,5 +1,7 @@
 # PyOS Web
 
+> **Abrir PyOS Web:** [https://dubicrack-yt.github.io/pyos-web/](https://dubicrack-yt.github.io/pyos-web/)
+
 PyOS Web es una simulación de sistema operativo que funciona completamente en el navegador. Se publica como una PWA bajo la ruta `/pyos` y se acompaña de un portal de lanzamiento para abrirla e instalarla.
 
 ## Novedades de la versión 1.5
@@ -70,6 +72,8 @@ client/public/pyos/sw.js  Trabajador de servicio y caché offline
 ## Publicación
 
 La PWA debe desplegarse mediante HTTPS. Tras publicar una actualización, abre PyOS una vez con Internet para permitir que el trabajador de servicio actualice su caché. Si un dispositivo muestra una versión antigua, cierra la app y vuelve a abrirla; como último recurso, elimina la instalación y vuelve a añadirla desde la URL publicada.
+
+La versión publicada está disponible en [GitHub Pages](https://dubicrack-yt.github.io/pyos-web/).
 
 ## Repositorio propuesto
 
