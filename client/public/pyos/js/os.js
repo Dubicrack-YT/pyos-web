@@ -420,6 +420,7 @@
       askString,
       confirm,
       isRoot: () => sessionRoot,
+      hasRootAccess: () => sessionRoot && !!PyStorage.getRootManagerForProfile(PyStorage.getActiveProfile().id).installed,
       elevate: (cb) => elevate(cb, appId),
       logoutRoot: () => {
         sessionRoot = false;

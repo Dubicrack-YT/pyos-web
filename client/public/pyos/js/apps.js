@@ -1361,8 +1361,8 @@ const PyApps = (() => {
     permissions: [],
     description: "Panel root para revisar y alternar servicios operativos de PyOS.",
     render(root, api) {
-      if (!api.isAdmin() || !api.isRoot()) {
-        root.append(el("div", { class: "banner warn", text: "Esta aplicación necesita una cuenta administradora y una sesión root aprobada desde Root Manager." }));
+      if (!api.hasRootAccess()) {
+        root.append(el("div", { class: "banner warn", text: "Esta aplicación necesita una sesión root aprobada desde Root Manager." }));
         return;
       }
       const services = api.services();
@@ -1468,8 +1468,8 @@ const PyApps = (() => {
     permissions: [],
     description: "Consulta el registro de arranque y actividades del sistema.",
     render(root, api) {
-      if (!api.isAdmin() || !api.isRoot()) {
-        root.append(el("div", { class: "banner warn", text: "Activa modo root con una cuenta administradora para consultar los registros del sistema." }));
+      if (!api.hasRootAccess()) {
+        root.append(el("div", { class: "banner warn", text: "Activa una sesión root aprobada desde Root Manager para consultar los registros del sistema." }));
         return;
       }
       const output = el("div", { class: "log-output" });
@@ -1525,7 +1525,7 @@ const PyApps = (() => {
           const app = OPTIONAL_APPS.find((candidate) => candidate.id === entry.id);
           const active = installed.indexOf(entry.id) !== -1;
           const rootRequired = !!entry.requiresAdmin;
-          const blocked = !storeOnline || (rootRequired && (!api.isAdmin() || !api.isRoot()));
+          const blocked = !storeOnline || (rootRequired && !api.hasRootAccess());
           const card = el("article", { class: "store-card" }, [
             el("div", { class: "store-icon", text: app.icon }),
             el("div", { class: "store-copy" }, [el("strong", { text: app.name }), el("span", { text: entry.category + (entry.requiresAdmin ? " · ROOT" : "") }), el("p", { class: "muted", text: entry.note })]),
