@@ -80,7 +80,7 @@ export default function Home() {
               <h1 id="hero-title">Un sistema pequeño.<br />Una sesión completa.</h1>
               <p>PyOS es una experiencia web instalable para abrir, explorar y conservar en el teléfono.</p>
             </div>
-            <div className="rail-details"><StatusLine label="canal" value="estable" /><StatusLine label="versión" value="v2.1.2" /><StatusLine label="reloj" value={clock || "--:--"} /></div>
+            <div className="rail-details"><StatusLine label="canal" value="estable" /><StatusLine label="versión" value="v2.2.0" /><StatusLine label="reloj" value={clock || "--:--"} /></div>
             <a href="#instalar" className="rail-jump">Ver instalación <ArrowDownRight size={17} /></a>
           </aside>
 
