@@ -351,13 +351,29 @@
       return false;
     };
 
+    const rootDenied = () => ({ ok: false, error: "Se requiere una sesión root activa." });
     const rootFsApi = {
-      list: (p) => PyStorage.rootList(p),
-      read: (p) => PyStorage.rootReadFile(p),
-      write: (p, c) => { const result = PyStorage.rootWriteFile(p, c); if (result.ok) PyStorage.logSystemEvent("rootfs", "Archivo de sistema escrito: /" + p); return result; },
-      mkdir: (p) => { const result = PyStorage.rootMkdir(p); if (result.ok) PyStorage.logSystemEvent("rootfs", "Carpeta de sistema creada: /" + p); return result; },
-      delete: (p) => { const result = PyStorage.rootDelete(p); if (result.ok) PyStorage.logSystemEvent("rootfs", "Archivo de sistema eliminado: /" + p); return result; },
-      isDir: (p) => PyStorage.rootIsDir(p),
+      list: (p) => (sessionRoot ? PyStorage.rootList(p) : []),
+      read: (p) => (sessionRoot ? PyStorage.rootReadFile(p) : null),
+      write: (p, c) => {
+        if (!sessionRoot) return rootDenied();
+        const result = PyStorage.rootWriteFile(p, c);
+        if (result.ok) PyStorage.logSystemEvent("rootfs", "Archivo de sistema escrito: /" + p);
+        return result;
+      },
+      mkdir: (p) => {
+        if (!sessionRoot) return rootDenied();
+        const result = PyStorage.rootMkdir(p);
+        if (result.ok) PyStorage.logSystemEvent("rootfs", "Carpeta de sistema creada: /" + p);
+        return result;
+      },
+      delete: (p) => {
+        if (!sessionRoot) return rootDenied();
+        const result = PyStorage.rootDelete(p);
+        if (result.ok) PyStorage.logSystemEvent("rootfs", "Archivo de sistema eliminado: /" + p);
+        return result;
+      },
+      isDir: (p) => sessionRoot && PyStorage.rootIsDir(p),
     };
 
     return {
@@ -390,8 +406,8 @@
       },
       systemVersion: () => PyStorage.getConfig().version || "2.2.0",
       deviceProfile: () => PyStorage.getConfig().device_profile || {},
-      rootManager: () => PyStorage.getRootManager(),
-      updateRootManager: (state) => PyStorage.setRootManager(state),
+      rootManager: () => PyStorage.getRootManagerForProfile(PyStorage.getActiveProfile().id),
+      updateRootManager: (state) => PyStorage.setRootManagerForProfile(PyStorage.getActiveProfile().id, state),
       rootManagerForProfile: (profileId) => PyStorage.getRootManagerForProfile(profileId),
       updateRootManagerForProfile: (profileId, state) => PyStorage.setRootManagerForProfile(profileId, state),
       services: () => PyStorage.getServices(),

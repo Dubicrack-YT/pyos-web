@@ -227,7 +227,9 @@ const PyApps = (() => {
     permissions: ["fs_read", "fs_write"],
     description: "Edita archivos del perfil y, en modo root, archivos del sistema.",
     render(root, api) {
-      const state = { path: api.args && api.args.path, root: !!(api.args && api.args.root) };
+      const requestedRoot = !!(api.args && api.args.root);
+      const state = { path: api.args && api.args.path, root: requestedRoot && api.isRoot() };
+      if (requestedRoot && !state.root) api.toast("El archivo del sistema requiere una sesión root activa.");
       const textarea = el("textarea", { class: "notepad-area", spellcheck: "false" });
       const btns = el("div", { class: "row toolbar" });
       const btnSave = el("button", { text: "Guardar" });
@@ -1522,12 +1524,13 @@ const PyApps = (() => {
         STORE_CATALOG.filter((entry) => selectedCategory === "Todas" || entry.category === selectedCategory).forEach((entry) => {
           const app = OPTIONAL_APPS.find((candidate) => candidate.id === entry.id);
           const active = installed.indexOf(entry.id) !== -1;
-          const blocked = !storeOnline || (!!entry.requiresAdmin && !api.isAdmin());
+          const rootRequired = !!entry.requiresAdmin;
+          const blocked = !storeOnline || (rootRequired && (!api.isAdmin() || !api.isRoot()));
           const card = el("article", { class: "store-card" }, [
             el("div", { class: "store-icon", text: app.icon }),
             el("div", { class: "store-copy" }, [el("strong", { text: app.name }), el("span", { text: entry.category + (entry.requiresAdmin ? " · ROOT" : "") }), el("p", { class: "muted", text: entry.note })]),
           ]);
-          const action = el("button", { class: active ? "danger" : "", text: !storeOnline ? "Servicio detenido" : blocked ? "Requiere admin" : active ? "Desinstalar" : "Instalar" });
+          const action = el("button", { class: active ? "danger" : "", text: !storeOnline ? "Servicio detenido" : blocked ? (rootRequired ? "Requiere root" : "Requiere admin") : active ? "Desinstalar" : "Instalar" });
           action.disabled = blocked;
           action.onclick = () => {
             const next = active ? installed.filter((id) => id !== entry.id) : installed.concat(entry.id);
