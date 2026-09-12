@@ -1525,14 +1525,15 @@ const PyApps = (() => {
           const app = OPTIONAL_APPS.find((candidate) => candidate.id === entry.id);
           const active = installed.indexOf(entry.id) !== -1;
           const rootRequired = !!entry.requiresAdmin;
-          const blocked = !storeOnline || (rootRequired && !api.hasRootAccess());
+          const needsRoot = rootRequired && !api.hasRootAccess();
+          const blocked = !storeOnline || (needsRoot && !active);
           const card = el("article", { class: "store-card" }, [
             el("div", { class: "store-icon", text: app.icon }),
             el("div", { class: "store-copy" }, [el("strong", { text: app.name }), el("span", { text: entry.category + (entry.requiresAdmin ? " · ROOT" : "") }), el("p", { class: "muted", text: entry.note })]),
           ]);
           const action = el("button", { class: active ? "danger" : "", text: !storeOnline ? "Servicio detenido" : blocked ? (rootRequired ? "Requiere root" : "Requiere admin") : active ? "Desinstalar" : "Instalar" });
-          action.disabled = blocked;
-          action.onclick = () => {
+          action.disabled = !storeOnline;
+          const commitInstall = () => {
             const next = active ? installed.filter((id) => id !== entry.id) : installed.concat(entry.id);
             api.setPreference("installed_apps", next);
             if (active) api.uninstallAppFiles(entry.id);
@@ -1540,6 +1541,16 @@ const PyApps = (() => {
             api.logSystemEvent("store", app.name + (active ? " desinstalada desde PyStore" : " instalada desde PyStore"));
             api.toast(active ? app.name + " desinstalada." : app.name + " instalada.");
             setTimeout(() => api.refreshApps(), 220);
+          };
+          action.onclick = () => {
+            if (needsRoot && !active) {
+              api.elevate((granted) => {
+                if (granted) commitInstall();
+                else api.toast("Se necesita aprobar la sesión root para instalar " + app.name + ".");
+              });
+              return;
+            }
+            commitInstall();
           };
           card.appendChild(action);
           list.appendChild(card);
