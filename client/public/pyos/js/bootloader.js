@@ -1,8 +1,8 @@
-/* bootloader.js -- arranque controlado y recuperable de PyOS Web 2.2.0. */
+/* bootloader.js -- arranque controlado y recuperable de PyOS Web 2.2.2. */
 (function () {
   "use strict";
 
-  var VERSION = "2.2.0";
+  var VERSION = "2.2.2";
   var MODULES = ["storage.js", "apps.js", "desktop.js", "touch.js", "console.js", "os.js"];
   var SCRIPT_BASE = document.currentScript && document.currentScript.src ? document.currentScript.src : new URL("./js/bootloader.js", window.location.href).href;
   var started = false;
