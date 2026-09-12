@@ -1,9 +1,11 @@
-const CACHE_NAME = "pyos-web-v29";
+const CACHE_NAME = "pyos-web-v30";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./manifest.json",
   "./css/style.css",
+  "./css/bootloader.css",
+  "./js/bootloader.js",
   "./js/storage.js",
   "./js/apps.js",
   "./js/desktop.js",
