@@ -1253,3 +1253,143 @@ button.ghost {
 .app-surface-console.app-surface-voxelforge { gap: 18px; }.app-surface-console.app-surface-voxelforge .voxel-hero { min-height: 176px; padding: 24px; border-color: color-mix(in srgb, var(--accent) 52%, #263229); }.app-surface-console.app-surface-voxelforge .voxel-hero strong { font-size: 30px; }.app-surface-console.app-surface-voxelforge .voxel-stage { grid-template-columns: minmax(0, 1.45fr) minmax(310px, .75fr); gap: 18px; }.app-surface-console.app-surface-voxelforge .voxel-board { min-height: 330px; }.app-surface-console.app-surface-voxelforge .voxel-side { gap: 14px; padding: 16px; }.app-surface-console.app-surface-voxelforge .voxel-controls button { min-height: 47px; font-size: 12px; }.app-surface-console.app-surface-voxelforge .voxel-item { min-height: 78px; }
 @media (max-width: 760px) { .voxel-stage { grid-template-columns: 1fr; }.voxel-board { max-width: 620px; width: 100%; justify-self: center; }.voxel-hero strong { font-size: 20px; } }
 @media (max-width: 420px) { .voxel-inventory { grid-template-columns: repeat(2, minmax(0, 1fr)); }.voxel-hero { min-height: 132px; padding: 14px; }.voxel-controls button { min-height: 44px; } }
+
+/* PyOS 2.2.1 responsive stability patch */
+.app-window,
+.app-window .app-content,
+.app-window .app-surface,
+.app-window .app-surface-body,
+.touch-app-view,
+.touch-app-content,
+.console-app-panel,
+.console-app-content {
+  min-width: 0;
+  min-height: 0;
+}
+.app-window .app-content,
+.touch-app-content,
+.console-app-content {
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+.app-surface,
+.app-surface-body {
+  min-width: 0;
+  width: 100%;
+}
+.app-surface-body > * {
+  max-width: 100%;
+}
+.app-surface-header,
+.row.toolbar,
+.account-card,
+.store-card,
+.task-row,
+.control-summary,
+.virus-row {
+  min-width: 0;
+}
+.app-surface-header strong,
+.app-surface-header span,
+.account-card strong,
+.store-copy,
+.store-copy p,
+.path-label,
+.mode-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.toolbar button {
+  max-width: 100%;
+}
+.file-list,
+.term-out,
+.log-output,
+.app-list,
+.app-detail,
+.root-policy-list {
+  min-width: 0;
+  max-width: 100%;
+}
+.app-surface-body > .row.toolbar:last-child {
+  flex-shrink: 0;
+}
+@media (max-width: 760px) {
+  .app-window .app-content { padding: 8px; }
+  .app-surface-body { gap: 8px; }
+  .app-surface-header { gap: 8px; padding: 10px; }
+  .app-surface-desktop .app-surface-header { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); }
+  .app-surface-desktop .app-surface-header strong { font-size: 12px; }
+  .app-actionbar,
+  .app-surface-body > .row.toolbar:last-child { gap: 6px; padding: 8px; }
+  .app-actionbar button,
+  .app-surface-body > .row.toolbar:last-child button { flex: 1 1 130px; min-height: 42px; padding: 8px; font-size: 11px; }
+  .app-list { width: min(32vw, 170px); }
+  .app-detail { padding-inline: 6px; }
+  .stat-row { flex-wrap: wrap; }
+  .account-create { grid-template-columns: 1fr; }
+  .store-card { grid-template-columns: 38px minmax(0, 1fr); }
+  .store-card button { grid-column: 1 / -1; width: 100%; }
+  .touch-statusbar { gap: 6px; padding-inline: 8px; }
+  .touch-statusbar .profile-switcher { max-width: 38vw; overflow: hidden; text-overflow: ellipsis; }
+  .console-app-bar { min-height: 58px; padding-inline: 10px; gap: 8px; }
+  .console-app-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .console-app-exit-hint { display: none; }
+}
+@media (max-width: 420px) {
+  .app-surface-body > .row.toolbar:last-child button,
+  .app-actionbar button { flex-basis: 100%; }
+  .app-list { width: 100%; max-height: 32vh; }
+  .settings-body { flex-direction: column; }
+  .app-detail { min-height: 180px; }
+  .app-surface-console .app-surface-header { grid-template-columns: 42px minmax(0, 1fr); min-height: 82px; padding: 10px; }
+  .app-surface-console .app-surface-header > .app-surface-kicker { display: none; }
+  .app-surface-console .app-surface-icon { width: 42px; height: 42px; font-size: 16px; }
+  .app-surface-console .app-surface-header strong { font-size: 16px; }
+  .console-app-content { padding: 12px; }
+}
+
+/* PyOS 2.2.1 layout follow-up: Root Manager tabs and centered launchers */
+.root-user-tabs {
+  flex: 0 0 auto;
+  min-height: 58px;
+  align-items: stretch;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 2px 10px;
+  scrollbar-width: thin;
+}
+.root-user-tab {
+  flex: 0 0 auto;
+  min-height: 46px;
+  height: auto;
+  align-items: center;
+  white-space: normal;
+  overflow: visible;
+}
+.root-user-tab > span:first-child {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  background: var(--accent);
+  color: var(--bg);
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: bold;
+}
+.root-user-tab strong,
+.root-user-tab small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.root-user-tab small { white-space: nowrap; }
+.icons-layer { justify-content: center; }
+@media (max-width: 640px) {
+  .root-user-tabs { min-height: 68px; gap: 8px; }
+  .root-user-tab { min-width: 148px; max-width: 70vw; padding: 9px 10px; }
+  .app-surface-rootmanager .app-surface-body { overflow-x: hidden; }
+  .app-surface-rootmanager .root-manager-status { margin-top: 2px; }
+}
