@@ -388,7 +388,7 @@
         applyTheme();
         return true;
       },
-      systemVersion: () => PyStorage.getConfig().version || "1.0.0",
+      systemVersion: () => PyStorage.getConfig().version || "2.2.0",
       deviceProfile: () => PyStorage.getConfig().device_profile || {},
       rootManager: () => PyStorage.getRootManager(),
       updateRootManager: (state) => PyStorage.setRootManager(state),
@@ -435,7 +435,7 @@
         username: PyStorage.getConfig().username || "admin",
         profileName: PyStorage.getActiveProfile().name,
         mode,
-        pyosVersion: PyStorage.getConfig().version || "1.0.0",
+        pyosVersion: PyStorage.getConfig().version || "2.2.0",
         appCount: PyApps.ALL.length,
         openWindows: hooks.countOpen ? hooks.countOpen() : 0,
         homeFileCount: PyStorage.homeFileCount(),
@@ -643,6 +643,7 @@
   // -----------------------------------------------------------------
   function bootSystem() {
     const result = PyStorage.bootstrap();
+    if (result.firstRun) PyStorage.recordIntegrity();
     const problems = result.firstRun ? [] : PyStorage.checkIntegrity();
     if (problems.length) {
       showBSOD(problems, () => {
@@ -732,8 +733,10 @@
     startShell();
   };
 
-  window.addEventListener("DOMContentLoaded", () => {
+  function startWhenReady() {
     toastEl = document.getElementById("toast");
     boot();
-  });
+  }
+  if (document.readyState === "loading") window.addEventListener("DOMContentLoaded", startWhenReady, { once: true });
+  else startWhenReady();
 })();

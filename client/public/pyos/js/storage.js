@@ -353,7 +353,7 @@ const PyStorage = (() => {
 
   function defaultConfig() {
     return {
-      version: "2.1.2",
+      version: "2.2.0",
       username: getActiveProfile().username,
       display_name: getActiveProfile().name,
       installed_at: new Date().toISOString(),
@@ -465,17 +465,17 @@ const PyStorage = (() => {
     );
     ensureFile(
       "system/boot.cfg",
-      "[boot]\nmodo=normal\nusuario_por_defecto=admin\n"
+      "[boot]\nmodo=normal\nbootloader=2.2.0\nusuario_por_defecto=admin\n"
     );
     ensureFile("system/drivers/video.drv", "driver de video PyOS\n");
     ensureFile("system/drivers/input.drv", "driver de entrada PyOS\n");
-    ensureFile("system/release.txt", "PyOS Web\nCanal: estable\nArquitectura: navegador\n");
+    ensureFile("system/release.txt", "PyOS Web\nVersión: 2.2.0\nCanal: estable\nArquitectura: navegador\n");
     ensureFile("system/logs/boot.log", "[boot] perfil local cargado\n[boot] servicios preparados\n[boot] interfaz disponible\n");
     ensureFile("system/logs/activity.log", "[system] historial de actividad de PyOS\n");
     ensureFile("system/services/shell.svc", "servicio=shell\nestado=activo\ninterfaz=desktop,touch,console\n");
     ensureFile("system/services/store.svc", "servicio=pystore\nestado=activo\nmodo=catalogo_local\n");
     ensureFile("system/config/ui.cfg", "[ui]\ntema=graphite\nidioma=es\nanimaciones=moderadas\n");
-    ensureFile("system/packages/core.pkg", "paquete=pyos-core\nversion=1.3\nproteccion=critica\n");
+    ensureFile("system/packages/core.pkg", "paquete=pyos-core\nversion=2.2.0\nproteccion=critica\n");
     ensureFile(PROGRAM_FILES + "/PyOS Shell/pyos-shell.exe", "PYOS EXECUTABLE\napp=shell\nrole=entorno principal\n");
     ensureFile(PROGRAM_FILES + "/Explorador PyOS/explorer.exe", "PYOS EXECUTABLE\napp=explorer\nrole=archivos y carpetas\n");
     ensureFile(PROGRAM_FILES + "/Root Manager/root-manager.exe", "PYOS EXECUTABLE\napp=rootmanager\nrole=políticas de privilegios\n");
@@ -493,8 +493,8 @@ const PyStorage = (() => {
     } else {
       const cfg = getConfig();
       if (!cfg.device_profile) cfg.device_profile = defaultConfig().device_profile;
-      if (cfg.version !== "2.1.2") {
-        cfg.version = "2.1.2";
+      if (cfg.version !== "2.2.0") {
+        cfg.version = "2.2.0";
         setConfig(cfg);
       }
     }
@@ -502,7 +502,6 @@ const PyStorage = (() => {
       saveJSONKey(PERMS_KEY, {});
     }
 
-    recordIntegrity();
     return { firstRun };
   }
 
