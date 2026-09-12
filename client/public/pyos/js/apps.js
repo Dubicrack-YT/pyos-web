@@ -358,10 +358,7 @@ const PyApps = (() => {
             println("Perfil activo: " + profile.name + " (@" + profile.username + ")");
           }
         } else if (cmd === "mode") {
-          if (args[0] === "switch") {
-            println("Abriendo selector de modo...");
-            api.switchMode();
-          } else println("Modo de interfaz: " + api.currentMode());
+          println("Modo de interfaz: escritorio (PC Edition)");
         } else if (cmd === "status") {
           const stats = api.systemStats();
           println("PyOS " + stats.pyosVersion + " · perfil " + stats.profileName);
@@ -483,14 +480,12 @@ const PyApps = (() => {
       ]);
       const actions = el("div", { class: "control-actions" });
       const btnProfile = el("button", { text: "Cambiar cuenta" });
-      const btnMode = el("button", { text: "Cambiar modo" });
       const btnAccounts = el("button", { text: "Administrar cuentas" });
       const btnPermissions = el("button", { class: "ghost", text: "Ver permisos" });
       btnProfile.onclick = () => api.switchProfile();
-      btnMode.onclick = () => api.switchMode();
       btnAccounts.onclick = () => api.openApp("accounts");
       btnPermissions.onclick = () => api.openApp("settings");
-      actions.append(btnProfile, btnMode, btnAccounts, btnPermissions);
+      actions.append(btnProfile, btnAccounts, btnPermissions);
       root.append(summary, el("p", { class: "muted", text: "Desde aquí puedes gestionar la sesión actual. Las cuentas estándar tienen sus propios archivos y preferencias, pero no modifican permisos globales." }), actions);
     },
   };

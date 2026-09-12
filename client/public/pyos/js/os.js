@@ -671,18 +671,11 @@
       return;
     }
 
-    const requested = new URLSearchParams(window.location.search).get("mode");
-    const remembered = PyStorage.getPreference("ui_mode", null);
-    const preferred = requested === "desktop" || requested === "touch" || requested === "console" ? requested : remembered;
-    if (preferred === "desktop" || preferred === "touch" || preferred === "console") {
-      mode = preferred;
-      showSplash(() => startShell());
-    } else {
-      showModeChooser((chosen) => {
-        mode = chosen;
-        showSplash(() => startShell());
-      });
-    }
+    // PyOS PC Edition: conserva los datos y perfiles, pero usa siempre el
+    // escritorio para evitar interfaces táctiles o de consola incompatibles.
+    mode = "desktop";
+    PyStorage.setPreference("ui_mode", "desktop");
+    showSplash(() => startShell());
   }
 
   function boot() {
