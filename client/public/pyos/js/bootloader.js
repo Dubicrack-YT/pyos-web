@@ -4,6 +4,7 @@
 
   var VERSION = "2.2.0";
   var MODULES = ["storage.js", "apps.js", "desktop.js", "touch.js", "console.js", "os.js"];
+  var SCRIPT_BASE = document.currentScript && document.currentScript.src ? document.currentScript.src : new URL("./js/bootloader.js", window.location.href).href;
   var started = false;
 
   function root() {
@@ -37,7 +38,7 @@
   function loadScript(name) {
     return new Promise(function (resolve, reject) {
       var script = document.createElement("script");
-      script.src = new URL("./" + name, document.currentScript && document.currentScript.src ? document.currentScript.src : window.location.href).href;
+      script.src = new URL("./" + name, SCRIPT_BASE).href;
       script.async = false;
       script.onload = function () { resolve(); };
       script.onerror = function () { reject(new Error("No se pudo cargar " + name)); };
