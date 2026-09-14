@@ -1254,7 +1254,7 @@ button.ghost {
 @media (max-width: 760px) { .voxel-stage { grid-template-columns: 1fr; }.voxel-board { max-width: 620px; width: 100%; justify-self: center; }.voxel-hero strong { font-size: 20px; } }
 @media (max-width: 420px) { .voxel-inventory { grid-template-columns: repeat(2, minmax(0, 1fr)); }.voxel-hero { min-height: 132px; padding: 14px; }.voxel-controls button { min-height: 44px; } }
 
-/* PyOS 2.2.1 responsive stability patch */
+/* PyOS 2.2.2 responsive stability patch */
 .app-window,
 .app-window .app-content,
 .app-window .app-surface,
@@ -1349,7 +1349,7 @@ button.ghost {
   .console-app-content { padding: 12px; }
 }
 
-/* PyOS 2.2.1 layout follow-up: Root Manager tabs and centered launchers */
+/* PyOS 2.2.2 layout follow-up: Root Manager tabs and centered launchers */
 .root-user-tabs {
   flex: 0 0 auto;
   min-height: 58px;
@@ -1393,3 +1393,6 @@ button.ghost {
   .app-surface-rootmanager .app-surface-body { overflow-x: hidden; }
   .app-surface-rootmanager .root-manager-status { margin-top: 2px; }
 }
+
+/* PyOS service lifecycle controls */
+.service-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;align-items:center;gap:12px}.service-copy{min-width:0}.service-state-dot{width:9px;height:9px;border-radius:50%;background:#7b3d3d;box-shadow:0 0 0 3px rgba(180,70,70,.12)}.service-state-dot.active{background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 18%,transparent)}.service-actions{display:flex;gap:6px;align-items:center}.service-action{min-width:72px;padding:7px 10px!important;font-size:11px!important}.service-action:disabled{opacity:.38;cursor:not-allowed}@media (max-width:640px){.service-row{grid-template-columns:auto minmax(0,1fr);gap:8px}.service-row>.accent{grid-column:2}.service-actions{grid-column:2}.service-action{flex:1}}
