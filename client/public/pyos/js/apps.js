@@ -1444,11 +1444,6 @@ const PyApps = (() => {
           return;
         }
         const controls = el("div", { class: "row toolbar app-actionbar root-manager-actions" });
-        if (selectedProfile.id === api.profile().id) {
-          const closeRoot = el("button", { class: "ghost", text: "Cerrar sesión root actual" });
-          closeRoot.onclick = () => { api.logoutRoot(); api.toast("Sesión root cerrada."); draw(); };
-          controls.appendChild(closeRoot);
-        }
         const uninstall = el("button", { class: "danger", text: "Quitar políticas de " + selectedProfile.name });
         uninstall.onclick = () => api.confirm("Quitar Root Manager", "Se eliminarán las políticas guardadas de " + selectedProfile.name + ".", (ok) => { if (!ok) return; api.updateRootManagerForProfile(selectedProfile.id, { installed: false, grants: {} }); if (selectedProfile.id === api.profile().id) api.logoutRoot(); api.logSystemEvent("root", "Políticas root eliminadas para " + selectedProfile.username); draw(); });
         controls.append(uninstall);

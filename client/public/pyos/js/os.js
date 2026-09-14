@@ -330,6 +330,7 @@
   // -----------------------------------------------------------------
   let openAppFn = null; // se define mas abajo, segun el modo
   let refreshShellFn = null;
+  let refreshAppsFn = null;
 
   function buildApi(appId, args, hooks) {
     const fsApi = (appId, permCheck) => ({
@@ -393,7 +394,7 @@
       setPreference: (key, value) => PyStorage.setPreference(key, value),
       installAppFiles: (id, label) => PyStorage.installAppFiles(id, label),
       uninstallAppFiles: (id) => PyStorage.uninstallAppFiles(id),
-      refreshApps: () => refreshShellFn && refreshShellFn(),
+      refreshApps: () => (refreshAppsFn ? refreshAppsFn() : refreshShellFn && refreshShellFn()),
       currentMode: () => mode,
       themes: () => Object.values(THEMES),
       activeTheme: () => activeTheme(),
@@ -675,6 +676,8 @@
     // escritorio para evitar interfaces táctiles o de consola incompatibles.
     mode = "desktop";
     PyStorage.setPreference("ui_mode", "desktop");
+    const activeManager = PyStorage.getRootManagerForProfile(PyStorage.getActiveProfile().id);
+    sessionRoot = !!activeManager.installed;
     showSplash(() => startShell());
   }
 
@@ -716,7 +719,8 @@
     },
     switchProfile: () => switchProfileFn && switchProfileFn(),
     switchMode: () => switchModeFn && switchModeFn(),
-    refreshApps: () => refreshShellFn && refreshShellFn(),
+    refreshApps: () => (refreshAppsFn ? refreshAppsFn() : refreshShellFn && refreshShellFn()),
+    setRefreshAppsFn: (fn) => (refreshAppsFn = fn),
   };
   switchProfileFn = () => {
     sessionRoot = false;
@@ -740,7 +744,8 @@
   };
   refreshShellFn = () => {
     PyStorage.bootstrap();
-    startShell();
+    if (refreshAppsFn) refreshAppsFn();
+    else startShell();
   };
 
   function startWhenReady() {

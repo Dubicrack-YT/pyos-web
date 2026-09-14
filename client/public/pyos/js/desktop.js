@@ -69,6 +69,12 @@ function startDesktop(buildApi, sys) {
     });
   }
 
+  // Actualiza indicadores sin reconstruir el escritorio ni cerrar ventanas.
+  PyOS.setRefreshAppsFn(() => {
+    refreshRootIndicator();
+    refreshTaskbar();
+  });
+
   function focusWindow(id) {
     if (!windows.has(id)) return;
     const idx = windowOrder.indexOf(id);
