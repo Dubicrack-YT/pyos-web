@@ -416,11 +416,7 @@ const PyApps = (() => {
           if (args[0] === "status") println(manager.installed ? "Root Manager " + manager.version + " instalado · políticas " + Object.keys(manager.grants || {}).length : "Root Manager no instalado.");
           else { println("Abriendo Root Manager..."); api.openApp("rootmanager"); }
         } else if (cmd === "exit") {
-          if (api.isRoot()) {
-            api.logoutRoot();
-            state.cwd = "";
-            println("Cerraste la sesion root en todo PyOS.");
-          } else println("No estas en modo root.");
+          println("La sesión root permanece activa por Root Manager. Usa 'quit' para cerrar esta terminal.");
         } else if (cmd === "passwd") {
           println("PyOS usa Root Manager con políticas por aplicación; no hay contraseña global que cambiar.");
         } else {
