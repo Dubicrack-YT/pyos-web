@@ -1362,17 +1362,30 @@ const PyApps = (() => {
       }
       const services = api.services();
       const list = el("div", { class: "task-list" });
-      const save = () => api.setServices(services);
+      const save = () => { api.setServices(services); api.refreshApps(); };
       Object.keys(services).forEach((id) => {
         const service = services[id];
-        const check = el("input", { type: "checkbox" });
-        check.checked = !!service.enabled;
         const state = el("span", { class: "accent", text: service.enabled ? "ACTIVO" : "DETENIDO" });
-        check.onchange = () => { service.enabled = check.checked; save(); api.logSystemEvent("service", service.label + " " + (check.checked ? "iniciado" : "detenido")); state.textContent = check.checked ? "ACTIVO" : "DETENIDO"; };
-        list.appendChild(el("div", { class: "task-row" }, [check, el("span", { text: service.label + " · " + service.detail }), state]));
+        const start = el("button", { class: service.enabled ? "ghost service-action" : "service-action", text: "Iniciar" });
+        const stop = el("button", { class: service.enabled ? "danger service-action" : "ghost service-action", text: "Detener" });
+        const setState = (enabled, verb) => {
+          service.enabled = enabled;
+          state.textContent = enabled ? "ACTIVO" : "DETENIDO";
+          start.disabled = enabled;
+          stop.disabled = !enabled;
+          save();
+          api.logSystemEvent("service", service.label + " " + verb);
+          api.toast(service.label + (enabled ? " iniciado." : " detenido."));
+        };
+        start.disabled = !!service.enabled;
+        stop.disabled = !service.enabled;
+        start.onclick = () => setState(true, "iniciado");
+        stop.onclick = () => setState(false, "detenido");
+        const actions = el("div", { class: "service-actions" }, [start, stop]);
+        list.appendChild(el("div", { class: "task-row service-row" }, [el("span", { class: "service-state-dot" + (service.enabled ? " active" : "") }), el("span", { class: "service-copy", text: service.label + " · " + service.detail }), state, actions]));
       });
       const restart = el("button", { class: "ghost", text: "Reiniciar todos" });
-      restart.onclick = () => { Object.keys(services).forEach((id) => { services[id].enabled = true; }); save(); api.logSystemEvent("service", "Todos los servicios operativos fueron reiniciados"); api.refreshApps(); };
+      restart.onclick = () => { Object.keys(services).forEach((id) => { services[id].enabled = true; }); save(); api.logSystemEvent("service", "Todos los servicios operativos fueron reiniciados"); api.toast("Todos los servicios fueron iniciados nuevamente."); };
       root.append(el("div", { class: "banner ok", text: "Sesión root verificada. Estos controles afectan PyStore y Device Info." }), el("h2", { text: "Servicios root" }), list, el("div", { class: "row toolbar" }, [restart]));
     },
   };
