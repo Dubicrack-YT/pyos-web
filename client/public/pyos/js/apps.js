@@ -1539,6 +1539,7 @@ const PyApps = (() => {
             else api.installAppFiles(entry.id, app.name);
             api.logSystemEvent("store", app.name + (active ? " desinstalada desde PyStore" : " instalada desde PyStore"));
             api.toast(active ? app.name + " desinstalada." : app.name + " instalada.");
+            draw();
             setTimeout(() => api.refreshApps(), 220);
           };
           action.onclick = () => {

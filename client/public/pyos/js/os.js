@@ -405,7 +405,7 @@
         applyTheme();
         return true;
       },
-      systemVersion: () => PyStorage.getConfig().version || "2.2.2",
+      systemVersion: () => PyStorage.getConfig().version || "2.2.8",
       deviceProfile: () => PyStorage.getConfig().device_profile || {},
       rootManager: () => PyStorage.getRootManagerForProfile(PyStorage.getActiveProfile().id),
       updateRootManager: (state) => PyStorage.setRootManagerForProfile(PyStorage.getActiveProfile().id, state),
@@ -453,7 +453,7 @@
         username: PyStorage.getConfig().username || "admin",
         profileName: PyStorage.getActiveProfile().name,
         mode,
-        pyosVersion: PyStorage.getConfig().version || "2.2.2",
+        pyosVersion: PyStorage.getConfig().version || "2.2.8",
         appCount: PyApps.ALL.length,
         openWindows: hooks.countOpen ? hooks.countOpen() : 0,
         homeFileCount: PyStorage.homeFileCount(),

@@ -71,8 +71,10 @@ function startDesktop(buildApi, sys) {
 
   // Actualiza indicadores sin reconstruir el escritorio ni cerrar ventanas.
   PyOS.setRefreshAppsFn(() => {
+    buildIcons();
     refreshRootIndicator();
     refreshTaskbar();
+    if (!startMenu.classList.contains("hidden")) buildStartMenu();
   });
 
   function focusWindow(id) {
@@ -339,9 +341,7 @@ function startDesktop(buildApi, sys) {
   }
 
   // ---- Menu de inicio -------------------------------------------------
-  startBtn.onclick = (e) => {
-    e.stopPropagation();
-    startMenu.classList.toggle("hidden");
+  function buildStartMenu() {
     startMenu.innerHTML = "";
     PyApps.ALL.forEach((app) => {
       const item = el("div", { class: "start-menu-item", text: app.icon + "  " + app.name });
@@ -351,6 +351,11 @@ function startDesktop(buildApi, sys) {
       };
       startMenu.appendChild(item);
     });
+  }
+  startBtn.onclick = (e) => {
+    e.stopPropagation();
+    startMenu.classList.toggle("hidden");
+    if (!startMenu.classList.contains("hidden")) buildStartMenu();
   };
   document.addEventListener("click", () => startMenu.classList.add("hidden"));
 
