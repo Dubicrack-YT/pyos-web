@@ -1,12 +1,10 @@
 /* Diseño PyOS: consola lateral + panel operativo; verde fósforo reservado a estados y acciones. */
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDownRight, ArrowUpRight, Check, ChevronRight, CircleDot, Clipboard, ExternalLink, MonitorCog, RotateCcw, ShieldCheck, Smartphone, TerminalSquare, Trash2, Wifi, X } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Check, Clipboard, ExternalLink, MonitorCog, RotateCcw, ShieldCheck, Smartphone, Settings2, Trash2, Users, X } from "lucide-react";
 
 const APP_PATH = "./pyos/index.html";
 const ASSETS = {
   logo: "./pyos/icons/icon-192.png",
-  hero: "https://images.unsplash.com/photo-1555066931-4365d14bab8c?auto=format&fit=crop&w=1800&q=85",
-  system: "https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&w=1500&q=85",
   install: "https://images.unsplash.com/photo-1498050108023-c5249f4df085?auto=format&fit=crop&w=1500&q=85",
 };
 
@@ -29,7 +27,6 @@ export default function Home() {
   }, []);
 
   const openPyOS = () => window.open(APP_PATH, "_blank", "noopener,noreferrer");
-  const openConsole = () => window.open(`${APP_PATH}?mode=console`, "_blank", "noopener,noreferrer");
   const copyInstallUrl = async () => {
     try {
       await navigator.clipboard.writeText(installUrl);
@@ -74,40 +71,40 @@ export default function Home() {
         <section className="launch-layout" aria-labelledby="hero-title">
           <aside className="console-rail" aria-label="Estado del sistema">
             <div className="rail-index">00 / Estado</div>
-            <div className="rail-logo-block"><TerminalSquare size={32} strokeWidth={1.5} /></div>
+            <div className="rail-logo-block"><Settings2 size={32} strokeWidth={1.5} /></div>
             <div className="rail-copy">
-              <p className="eyebrow"><CircleDot size={12} fill="currentColor" /> Núcleo disponible</p>
-              <h1 id="hero-title">Un sistema pequeño.<br />Una sesión completa.</h1>
-              <p>PyOS es una experiencia web instalable para abrir, explorar y conservar en el teléfono.</p>
+              <p className="eyebrow">● Panel de control</p>
+              <h1 id="hero-title">Configura tu<br />entorno PyOS.</h1>
+              <p>Administra perfiles, componentes y almacenamiento local antes de entrar al escritorio.</p>
             </div>
-            <div className="rail-details"><StatusLine label="canal" value="estable" /><StatusLine label="versión" value="v2.2.2" /><StatusLine label="reloj" value={clock || "--:--"} /></div>
-            <a href="#instalar" className="rail-jump">Ver instalación <ArrowDownRight size={17} /></a>
+            <div className="rail-details"><StatusLine label="canal" value="estable" /><StatusLine label="versión" value="v2.2.8" /><StatusLine label="reloj" value={clock || "--:--"} /></div>
+            <a href="#componentes" className="rail-jump">Ver componentes <ArrowDownRight size={17} /></a>
           </aside>
 
           <div className="launch-stage" id="sistema">
-            <img src={ASSETS.hero} alt="Dispositivo mostrando una consola PyOS abstracta" className="stage-art" />
+            <div className="stage-art config-art" aria-hidden="true" />
             <div className="stage-overlay" /><div className="stage-corner stage-corner-a">SYS / 01</div><div className="stage-corner stage-corner-b">PWA READY</div>
             <div className="launch-copy">
-              <p className="eyebrow">Entorno web independiente</p>
-              <h2>Arranca PyOS<br /><em>desde aquí.</em></h2>
-              <p>El sistema se ejecuta en tu navegador. Abre la sesión completa o continúa en modo instalado desde tu pantalla de inicio.</p>
-              <div className="action-row"><button type="button" className="primary-action" onClick={openPyOS}><span>Iniciar PyOS</span><ArrowUpRight size={19} /></button><button type="button" className="text-action" onClick={openConsole}>Probar Consola <ChevronRight size={18} /></button><a href="#instalar" className="text-action">Cómo instalar <ChevronRight size={18} /></a></div>
+              <p className="eyebrow">Centro de configuración</p>
+              <h2>Tu navegador.<br /><em>Tu sistema.</em></h2>
+              <p>Esta página es el panel previo de PyOS: revisa usuarios, componentes y almacenamiento antes de abrir la sesión completa.</p>
+              <div className="action-row"><button type="button" className="primary-action" onClick={openPyOS}><span>Abrir escritorio</span><ArrowUpRight size={19} /></button><a href="#usuarios" className="text-action">Gestionar usuarios <ArrowUpRight size={18} /></a></div>
             </div>
             <div className="live-window" aria-label="Vista previa interactiva de PyOS">
-              <div className="window-chrome"><div className="window-dots"><i /><i /><i /></div><span><b>LAUNCH / </b>/pyos/index.html</span><a href={APP_PATH} target="_blank" rel="noreferrer" aria-label="Abrir PyOS en otra pestaña"><ExternalLink size={14} /></a></div>
-              <iframe title="Vista previa de PyOS" src={APP_PATH} className="pyos-frame" loading="eager" />
+              <div className="window-chrome"><div className="window-dots"><i /><i /><i /></div><span><b>PYOS / </b>CONFIGURACIÓN LOCAL</span><ExternalLink size={14} /></div>
+              <div className="pyos-frame config-preview"><strong>Entorno preparado</strong><span>Abre PyOS para administrar tus cuentas y componentes.</span><div className="preview-meter"><i /></div></div>
             </div>
           </div>
         </section>
 
-        <section className="operations-section" aria-label="Características del sistema">
-          <aside className="operations-rail"><span>01 / Operación</span><div className="boot-emblem">▣<i>_</i></div><p>Estado de la sesión</p><StatusLine label="perfiles" value="locales" /><StatusLine label="modos" value="3 activos" /><StatusLine label="pwa" value="lista" /></aside>
+        <section className="operations-section" id="usuarios" aria-label="Configuración de usuarios">
+          <aside className="operations-rail"><span>01 / Usuarios</span><div className="boot-emblem"><Users size={27} /><i>_</i></div><p>Perfiles locales</p><StatusLine label="cuentas" value="locales" /><StatusLine label="privilegios" value="Root Manager" /></aside>
           <div className="operations-panel">
-            <div className="panel-heading"><span>PYOS / CAPACIDADES</span><p>Elige una cuenta, selecciona un modo y continúa con una sesión guardada en este navegador.</p></div>
+            <div className="panel-heading"><span>PYOS / PERFILES</span><p>Administra usuarios locales desde Accounts dentro de PyOS. Cada perfil conserva sus propios archivos, permisos y aplicaciones.</p></div>
             <div className="capability-grid">
-              <article className="capability-card"><span className="card-code">MODE / TRIPLE</span><MonitorCog size={25} strokeWidth={1.5} /><h3>Tres entornos</h3><p>Escritorio para PC, Táctil para teléfono y Consola para TV, teclado o control.</p></article>
-              <article className="capability-card"><span className="card-code">PROFILE / LOCAL</span><ShieldCheck size={25} strokeWidth={1.5} /><h3>Cuentas simuladas</h3><p>Cada perfil conserva archivos, permisos, tema y el modo inicial elegido.</p></article>
-              <article className="capability-card system-surface"><div className="surface-chrome"><i /><i /><i /><span>PYOS / DEVICE INFO</span></div><div className="surface-list"><span>CPU / AMD Ryzen 7</span><span>GPU / NVIDIA RTX</span><span>RAM / 32 GB DDR5</span><span>STORE / LOCAL READY</span></div><div><Wifi size={18} /><span>PWA actualizable · modo consola listo</span></div></article>
+              <article className="capability-card"><Users size={25} strokeWidth={1.5} /><h3>Perfiles locales</h3><p>Crea, cambia o elimina cuentas desde el administrador de usuarios integrado.</p><button type="button" className="text-action" onClick={openPyOS}>Abrir cuentas <ArrowUpRight size={16} /></button></article>
+              <article className="capability-card"><ShieldCheck size={25} strokeWidth={1.5} /><h3>Root Manager</h3><p>La sesión root permanece disponible y las apps elevadas reciben permisos de forma coherente.</p></article>
+              <article className="capability-card"><MonitorCog size={25} strokeWidth={1.5} /><h3>Escritorio PC</h3><p>Ventanas, barra de tareas, menú Inicio e iconos de las aplicaciones instaladas.</p></article>
             </div>
           </div>
         </section>
