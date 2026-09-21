@@ -405,8 +405,12 @@
         applyTheme();
         return true;
       },
-      systemVersion: () => PyStorage.getConfig().version || "2.2.8",
-      deviceProfile: () => PyStorage.getConfig().device_profile || {},
+      systemVersion: () => PyStorage.getConfig().version || "2.3.0",
+      deviceProfile: () => {
+        const cfg = PyStorage.getConfig().device_profile || {};
+        const hw = window.PyHardware ? PyHardware.get() : {};
+        return Object.assign({}, cfg, { cpu: hw.cpu ? hw.cpu.model : cfg.cpu, gpu: hw.gpu ? hw.gpu.model : cfg.gpu, memory_gb: hw.ram ? hw.ram.gb : cfg.memory_gb, storage_gb: hw.storage ? hw.storage.gb : cfg.storage_gb, vram_gb: hw.gpu ? hw.gpu.vram : cfg.vram_gb });
+      },
       rootManager: () => PyStorage.getRootManagerForProfile(PyStorage.getActiveProfile().id),
       updateRootManager: (state) => PyStorage.setRootManagerForProfile(PyStorage.getActiveProfile().id, state),
       rootManagerForProfile: (profileId) => PyStorage.getRootManagerForProfile(profileId),
@@ -453,7 +457,7 @@
         username: PyStorage.getConfig().username || "admin",
         profileName: PyStorage.getActiveProfile().name,
         mode,
-        pyosVersion: PyStorage.getConfig().version || "2.2.8",
+        pyosVersion: PyStorage.getConfig().version || "2.3.0",
         appCount: PyApps.ALL.length,
         openWindows: hooks.countOpen ? hooks.countOpen() : 0,
         homeFileCount: PyStorage.homeFileCount(),
@@ -461,29 +465,34 @@
         installedAt: (PyStorage.getConfig().installed_at || "").slice(0, 19).replace("T", " "),
       }),
       hardwareTelemetry: () => {
+        const configured = window.PyHardware ? PyHardware.get() : {};
         const profile = PyStorage.getConfig().device_profile || {};
-        const memoryGb = Number(profile.memory_gb) || 32;
-        const storageGb = Number(profile.storage_gb) || 1024;
+        const cpuSpec = configured.cpu || { cores: 8, threads: 16, baseGHz: 4.2, boostGHz: 5.0, tdp: 120 };
+        const gpuSpec = configured.gpu || { vram: Number(profile.vram_gb) || 12, tflops: 35.5, rayTracing: true };
+        const memoryGb = Number((configured.ram && configured.ram.gb) || profile.memory_gb) || 32;
+        const storageGb = Number((configured.storage && configured.storage.gb) || profile.storage_gb) || 1024;
         const services = PyStorage.getServices();
         const now = performance.now() / 1000;
         const openCount = hooks.countOpen ? hooks.countOpen() : 1;
-        const activeLoad = Math.min(24, openCount * 3 + (sessionRoot ? 4 : 0) + (appId === "voxelforge" ? 13 : 0));
-        const cpu = Math.round(Math.max(3, Math.min(96, 11 + activeLoad + 12 * Math.sin(now * 0.78) + 7 * Math.sin(now * 2.13))));
-        const gpu = Math.round(Math.max(2, Math.min(97, 7 + activeLoad * 1.2 + 16 * Math.cos(now * 0.62) + (appId === "voxelforge" ? 18 : 0))));
+        const load = window.PyHardware ? PyHardware.appLoad(appId) : { cpu: 5, gpu: 3, ram: 0.5, disk: 0.2, net: 0.1 };
+        const activeLoad = Math.min(58, openCount * 2 + (sessionRoot ? 4 : 0) + load.cpu * 0.5);
+        const cpu = Math.round(Math.max(2, Math.min(99, 5 + activeLoad + load.cpu * 0.72 + 7 * Math.sin(now * 2.13))));
+        const gpu = Math.round(Math.max(1, Math.min(99, 3 + load.gpu * 0.95 + openCount * 1.2 + 8 * Math.cos(now * 0.62))));
         const heap = performance.memory && performance.memory.usedJSHeapSize ? performance.memory.usedJSHeapSize / 1073741824 : 0.34 + openCount * 0.09;
-        const ram = Math.min(memoryGb * 0.86, Math.max(memoryGb * 0.18, memoryGb * 0.22 + heap + activeLoad * 0.021 + Math.sin(now * 0.31) * 0.18));
+        const ram = Math.min(memoryGb * 0.94, Math.max(memoryGb * 0.12, memoryGb * 0.16 + heap + load.ram + activeLoad * 0.018 + Math.sin(now * 0.31) * 0.18));
         const fileGb = PyStorage.estimateBytes() / 1073741824;
-        const storage = Math.min(storageGb * 0.92, Math.max(48, 106 + fileGb + openCount * 0.16 + Math.sin(now * 0.11) * 0.05));
-        const net = navigator.onLine && services.telemetry && services.telemetry.enabled ? Math.max(0, Math.round(0.6 + activeLoad * 0.18 + 2.3 * Math.abs(Math.sin(now * 0.43)))) : 0;
+        const storage = Math.min(storageGb * 0.92, Math.max(1, 14 + fileGb + load.disk + openCount * 0.16 + Math.sin(now * 0.11) * 0.05));
+        const online = configured.network ? configured.network.connected : navigator.onLine;
+        const net = online && services.telemetry && services.telemetry.enabled ? Math.max(0, Math.round(load.net * 10 + activeLoad * 0.12 + 2.3 * Math.abs(Math.sin(now * 0.43)))) : 0;
         return {
           cpu, gpu, ram, storage, net,
-          cpuClock: (4.25 + cpu / 100 * 0.92).toFixed(2),
-          gpuClock: Math.round(1260 + gpu * 9.2),
-          cpuTemp: Math.round(37 + cpu * 0.47),
-          gpuTemp: Math.round(34 + gpu * 0.43),
-          diskRate: (4 + Math.abs(Math.sin(now * 0.9)) * (18 + activeLoad)).toFixed(1),
-          processes: Math.max(36, 54 + openCount * 3 + (sessionRoot ? 2 : 0)),
-          memoryGb, storageGb,
+          cpuClock: (cpuSpec.baseGHz + cpu / 100 * (cpuSpec.boostGHz - cpuSpec.baseGHz)).toFixed(2),
+          gpuClock: Math.round(900 + gpu * (gpuSpec.tflops || 20) * 8),
+          cpuTemp: Math.round(31 + cpu * (cpuSpec.tdp || 100) / 220),
+          gpuTemp: Math.round(29 + gpu * (gpuSpec.tflops || 20) / 55),
+          diskRate: (1 + Math.abs(Math.sin(now * 0.9)) * (load.disk * 12 + activeLoad)).toFixed(1),
+          processes: Math.max(24, 38 + openCount * 3 + (sessionRoot ? 2 : 0)),
+          memoryGb, storageGb, vramGb: gpuSpec.vram, tflops: gpuSpec.tflops, rayTracing: !!gpuSpec.rayTracing,
         };
       },
       onActivate: (cb) => hooks.onActivate && hooks.onActivate(cb),

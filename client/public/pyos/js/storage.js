@@ -353,7 +353,7 @@ const PyStorage = (() => {
 
   function defaultConfig() {
     return {
-      version: "2.2.8",
+      version: "2.3.0",
       username: getActiveProfile().username,
       display_name: getActiveProfile().name,
       installed_at: new Date().toISOString(),
@@ -363,6 +363,8 @@ const PyStorage = (() => {
         gpu: "NVIDIA GeForce RTX 4070 SUPER",
         memory_gb: 32,
         storage_gb: 1024,
+        storage_type: "NVMe PCIe 4.0",
+        vram_gb: 12,
       },
     };
   }
@@ -471,11 +473,11 @@ const PyStorage = (() => {
     );
     ensureFile(
       "system/boot.cfg",
-      "[boot]\nmodo=normal\nbootloader=2.2.8\nusuario_por_defecto=admin\n"
+      "[boot]\nmodo=normal\nbootloader=2.3.0\nusuario_por_defecto=admin\n"
     );
     ensureFile("system/drivers/video.drv", "driver de video PyOS\n");
     ensureFile("system/drivers/input.drv", "driver de entrada PyOS\n");
-    ensureFile("system/release.txt", "PyOS Web\nVersión: 2.2.8\nCanal: estable\nArquitectura: navegador\n");
+    ensureFile("system/release.txt", "PyOS Web\nVersión: 2.3.0\nCanal: estable\nArquitectura: navegador\n");
     ensureFile("system/logs/boot.log", "[boot] perfil local cargado\n[boot] servicios preparados\n[boot] interfaz disponible\n");
     ensureFile("system/logs/activity.log", "[system] historial de actividad de PyOS\n");
     ensureFile("system/services/shell.svc", "servicio=shell\nestado=activo\ninterfaz=desktop,touch,console\n");
@@ -486,7 +488,7 @@ const PyStorage = (() => {
     ensureFile("system/security/policies.json", "{\n  \"root_manager\": \"enabled\",\n  \"protected_paths\": [\"system\", \"Program Files\", \"Program Files (x86)\"]\n}\n");
     ensureFile("system/runtime/README.txt", "Runtime de PyOS PC Edition. Los datos temporales se guardan en este volumen simulado.\n");
     ensureFile("Users/Public/README.txt", "Archivos compartidos entre perfiles locales de PyOS.\n");
-    ensureFile("system/packages/core.pkg", "paquete=pyos-core\nversion=2.2.8\nproteccion=critica\n");
+    ensureFile("system/packages/core.pkg", "paquete=pyos-core\nversion=2.3.0\nproteccion=critica\n");
     ensureFile(PROGRAM_FILES + "/PyOS Shell/pyos-shell.exe", "PYOS EXECUTABLE\napp=shell\nrole=entorno principal\n");
     ensureFile(PROGRAM_FILES + "/Explorador PyOS/explorer.exe", "PYOS EXECUTABLE\napp=explorer\nrole=archivos y carpetas\n");
     ensureFile(PROGRAM_FILES + "/Root Manager/root-manager.exe", "PYOS EXECUTABLE\napp=rootmanager\nrole=políticas de privilegios\n");
@@ -504,8 +506,8 @@ const PyStorage = (() => {
     } else {
       const cfg = getConfig();
       if (!cfg.device_profile) cfg.device_profile = defaultConfig().device_profile;
-      if (cfg.version !== "2.2.8") {
-        cfg.version = "2.2.8";
+      if (cfg.version !== "2.3.0") {
+        cfg.version = "2.3.0";
         setConfig(cfg);
       }
     }
