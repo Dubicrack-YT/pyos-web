@@ -4,7 +4,7 @@
 
 PyOS Web es una simulación de sistema operativo que funciona completamente en el navegador. Se publica como una PWA bajo la ruta `/pyos` y se acompaña de un portal de lanzamiento para abrirla e instalarla.
 
-## Novedades de la versión 1.5
+## Novedades de la versión 2.3.0
 
 | Área | Implementación |
 |---|---|
@@ -21,6 +21,12 @@ PyOS Web es una simulación de sistema operativo que funciona completamente en e
 | Catálogo ampliado | Filtros de PyStore y aplicaciones opcionales de personalización y herramientas root. |
 | Root Manager | Gestor local de superusuario con instalación simulada, solicitudes por aplicación y políticas persistentes. |
 | Operaciones | Logs root registra arranque, privilegios, servicios, archivos root e instalaciones de PyStore. |
+| Hardware | Centro externo de configuración para CPU, GPU NVIDIA/AMD/Intel, RAM, almacenamiento y requisitos mínimos. |
+| Consumo | Telemetría dinámica por aplicación con cargas de CPU, GPU, VRAM, RAM, disco y red. |
+| Renderizado | Benchmark procedural con ray tracing simulado, reflejos, ruido, TAAU Ultimate y Frame Generation configurable. |
+| Red | Ethernet por defecto, adaptador Wi-Fi simulado, redes visibles y cambio de conexión persistente. |
+| Actualizaciones | Migración versionada 2.3.0 con historial y conservación de perfiles, archivos y apps. |
+| Apps GPU | NVIDIA App, Panel de control GPU, AMD Software: Adrenalin e Intel Graphics Center. |
 
 ## Ejecutar localmente
 
@@ -39,6 +45,8 @@ pnpm build
 ```
 
 ## Usar PyOS
+
+Antes de iniciar el escritorio puedes abrir el [Centro de configuración externo](https://dubicrack-yt.github.io/pyos-web/pyos/config.html) para cambiar componentes, revisar perfiles y archivos, elegir red, borrar datos o actualizar el sistema.
 
 Abre `/pyos/index.html` desde el sitio. En el primer inicio se puede elegir una cuenta local o crear otra. Después, selecciona un modo de uso:
 
