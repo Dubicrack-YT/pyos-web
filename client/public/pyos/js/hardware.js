@@ -1,7 +1,7 @@
 /* hardware.js -- perfil de hardware, consumo dinámico, red y actualizaciones de PyOS. */
 (function () {
   "use strict";
-  const VERSION = "2.3.0";
+  const VERSION = "2.3.1";
   const KEY = "pyos_hardware_v3";
   const UPDATE_KEY = "pyos_update_state_v1";
   const DEFAULT = {
@@ -10,7 +10,8 @@
     ram: { gb: 32, type: "DDR5", speed: 6000 },
     storage: { gb: 1024, type: "NVMe PCIe 4.0", freeGb: 918 },
     network: { mode: "ethernet", connected: true, wifiEnabled: true, ssid: "PyOS-Lab-5G", signal: 92, speedMbps: 1000 },
-    renderer: { taa: "TAAU Ultimate", frameGeneration: true, resolutionScale: 1, rayTracing: true, noise: 0.08 },
+    renderer: { taa: "TAAU Ultimate", fxaa: false, upscaler: "DLSS", frameGeneration: true, resolutionScale: 1, rayTracing: true, noise: 0.08, postProcessing: true, effects: "Ultra" },
+    overclock: { enabled: false, coreOffset: 0, memoryOffset: 0, powerLimit: 100 },
   };
   const CPU_CATALOG = [
     { id: "ryzen-9-9950x", vendor: "AMD", model: "AMD Ryzen 9 9950X", cores: 16, threads: 32, baseGHz: 4.3, boostGHz: 5.7, tdp: 170, tier: "Entusiasta" },

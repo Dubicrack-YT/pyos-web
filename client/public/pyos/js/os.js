@@ -409,7 +409,28 @@
       deviceProfile: () => {
         const cfg = PyStorage.getConfig().device_profile || {};
         const hw = window.PyHardware ? PyHardware.get() : {};
-        return Object.assign({}, cfg, { cpu: hw.cpu ? hw.cpu.model : cfg.cpu, gpu: hw.gpu ? hw.gpu.model : cfg.gpu, memory_gb: hw.ram ? hw.ram.gb : cfg.memory_gb, storage_gb: hw.storage ? hw.storage.gb : cfg.storage_gb, vram_gb: hw.gpu ? hw.gpu.vram : cfg.vram_gb });
+        const cpu = hw.cpu || {};
+        const gpu = hw.gpu || {};
+        const ram = hw.ram || {};
+        const storage = hw.storage || {};
+        return Object.assign({}, cfg, {
+          cpu: cpu.model || cfg.cpu,
+          cpu_vendor: cpu.vendor || cfg.cpu_vendor,
+          cpu_cores: cpu.cores || cfg.cpu_cores,
+          cpu_threads: cpu.threads || cfg.cpu_threads,
+          cpu_base_ghz: cpu.baseGHz || cfg.cpu_base_ghz,
+          cpu_boost_ghz: cpu.boostGHz || cfg.cpu_boost_ghz,
+          gpu: gpu.model || cfg.gpu,
+          gpu_vendor: gpu.vendor || cfg.gpu_vendor,
+          gpu_vram: gpu.vram || cfg.vram_gb,
+          gpu_tflops: gpu.tflops || cfg.gpu_tflops,
+          gpu_ray_tracing: gpu.rayTracing !== undefined ? gpu.rayTracing : cfg.gpu_ray_tracing,
+          memory_gb: ram.gb || cfg.memory_gb,
+          memory_type: ram.type || cfg.memory_type,
+          memory_speed: ram.speed || cfg.memory_speed,
+          storage_gb: storage.gb || cfg.storage_gb,
+          storage_type: storage.type || cfg.storage_type,
+        });
       },
       rootManager: () => PyStorage.getRootManagerForProfile(PyStorage.getActiveProfile().id),
       updateRootManager: (state) => PyStorage.setRootManagerForProfile(PyStorage.getActiveProfile().id, state),
@@ -469,6 +490,8 @@
         const profile = PyStorage.getConfig().device_profile || {};
         const cpuSpec = configured.cpu || { cores: 8, threads: 16, baseGHz: 4.2, boostGHz: 5.0, tdp: 120 };
         const gpuSpec = configured.gpu || { vram: Number(profile.vram_gb) || 12, tflops: 35.5, rayTracing: true };
+        const overclock = configured.overclock || { enabled: false, coreOffset: 0, memoryOffset: 0, powerLimit: 100 };
+        const renderer = configured.renderer || {};
         const memoryGb = Number((configured.ram && configured.ram.gb) || profile.memory_gb) || 32;
         const storageGb = Number((configured.storage && configured.storage.gb) || profile.storage_gb) || 1024;
         const services = PyStorage.getServices();
@@ -477,7 +500,8 @@
         const load = window.PyHardware ? PyHardware.appLoad(appId) : { cpu: 5, gpu: 3, ram: 0.5, disk: 0.2, net: 0.1 };
         const activeLoad = Math.min(58, openCount * 2 + (sessionRoot ? 4 : 0) + load.cpu * 0.5);
         const cpu = Math.round(Math.max(2, Math.min(99, 5 + activeLoad + load.cpu * 0.72 + 7 * Math.sin(now * 2.13))));
-        const gpu = Math.round(Math.max(1, Math.min(99, 3 + load.gpu * 0.95 + openCount * 1.2 + 8 * Math.cos(now * 0.62))));
+        const renderCost = renderer.effects === "Ultra" ? 4 : renderer.effects === "Alto" ? 2 : renderer.effects === "Bajo" ? -2 : 0;
+        const gpu = Math.round(Math.max(1, Math.min(99, 3 + load.gpu * 0.95 + openCount * 1.2 + renderCost + 8 * Math.cos(now * 0.62))));
         const heap = performance.memory && performance.memory.usedJSHeapSize ? performance.memory.usedJSHeapSize / 1073741824 : 0.34 + openCount * 0.09;
         const ram = Math.min(memoryGb * 0.94, Math.max(memoryGb * 0.12, memoryGb * 0.16 + heap + load.ram + activeLoad * 0.018 + Math.sin(now * 0.31) * 0.18));
         const fileGb = PyStorage.estimateBytes() / 1073741824;
@@ -487,12 +511,12 @@
         return {
           cpu, gpu, ram, storage, net,
           cpuClock: (cpuSpec.baseGHz + cpu / 100 * (cpuSpec.boostGHz - cpuSpec.baseGHz)).toFixed(2),
-          gpuClock: Math.round(900 + gpu * (gpuSpec.tflops || 20) * 8),
+          gpuClock: Math.round(900 + gpu * (gpuSpec.tflops || 20) * 8 + (overclock.enabled ? Number(overclock.coreOffset || 0) * 18 : 0)),
           cpuTemp: Math.round(31 + cpu * (cpuSpec.tdp || 100) / 220),
-          gpuTemp: Math.round(29 + gpu * (gpuSpec.tflops || 20) / 55),
+          gpuTemp: Math.round(29 + gpu * (gpuSpec.tflops || 20) / 55 + (overclock.enabled ? Number(overclock.powerLimit || 100) - 100 : 0) * 0.18),
           diskRate: (1 + Math.abs(Math.sin(now * 0.9)) * (load.disk * 12 + activeLoad)).toFixed(1),
           processes: Math.max(24, 38 + openCount * 3 + (sessionRoot ? 2 : 0)),
-          memoryGb, storageGb, vramGb: gpuSpec.vram, tflops: gpuSpec.tflops, rayTracing: !!gpuSpec.rayTracing,
+          memoryGb, storageGb, vramGb: gpuSpec.vram, tflops: gpuSpec.tflops, rayTracing: !!gpuSpec.rayTracing, overclock: !!overclock.enabled, renderer,
         };
       },
       onActivate: (cb) => hooks.onActivate && hooks.onActivate(cb),

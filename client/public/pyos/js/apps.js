@@ -1254,8 +1254,19 @@ const PyApps = (() => {
     render(root, api) {
       const body = appSurface(root, api, deviceInfo);
       const hardware = api.deviceProfile();
-      const cpuModel = hardware.cpu || "AMD Ryzen 7 7800X3D";
-      const gpuModel = hardware.gpu || "NVIDIA GeForce RTX 4070 SUPER";
+      const cpuModel = hardware.cpu || "CPU no detectada";
+      const gpuModel = hardware.gpu || "GPU no detectada";
+      const cpuVendor = hardware.cpu_vendor || "CPU";
+      const gpuVendor = hardware.gpu_vendor || "GPU";
+      const cpuCores = Number(hardware.cpu_cores) || 0;
+      const cpuThreads = Number(hardware.cpu_threads) || cpuCores;
+      const cpuBase = Number(hardware.cpu_base_ghz) || 0;
+      const gpuVram = Number(hardware.gpu_vram || hardware.vram_gb) || 0;
+      const gpuTflops = Number(hardware.gpu_tflops) || 0;
+      const gpuRayTracing = hardware.gpu_ray_tracing !== false;
+      const memoryType = hardware.memory_type || "RAM";
+      const memorySpeed = Number(hardware.memory_speed) || 0;
+      const storageType = hardware.storage_type || "Almacenamiento local";
       const memoryGb = Number(hardware.memory_gb) || 32;
       const storageGb = Number(hardware.storage_gb) || 1024;
       const header = el("div", { class: "device-header" }, [
@@ -1267,10 +1278,10 @@ const PyApps = (() => {
       const detail = el("div", { class: "device-detail" });
       body.append(header, metrics, detail);
       const components = [
-        { label: "CPU", model: cpuModel, meta: "8 núcleos · 16 hilos · AM5 · 4.2 GHz base", key: "cpu" },
-        { label: "GPU", model: gpuModel, meta: "12 GB GDDR6X · Ray Tracing · Driver 555.85", key: "gpu" },
-        { label: "RAM", model: memoryGb + " GB DDR5-6000", meta: "2 × " + (memoryGb / 2) + " GB · doble canal · 6000 MT/s", key: "ram" },
-        { label: "ALM", model: (storageGb / 1024).toFixed(0) + " TB NVMe PCIe 4.0", meta: "Volumen PyOS · sistema de archivos local", key: "storage" },
+        { label: "CPU · " + cpuVendor, model: cpuModel, meta: cpuCores + " núcleos · " + cpuThreads + " hilos · " + cpuBase + " GHz base", key: "cpu" },
+        { label: "GPU · " + gpuVendor, model: gpuModel, meta: gpuVram + " GB VRAM · " + gpuTflops + " TFLOPS · " + (gpuRayTracing ? "Ray Tracing" : "sin Ray Tracing"), key: "gpu" },
+        { label: "RAM", model: memoryGb + " GB " + memoryType, meta: memorySpeed + " MT/s · memoria configurada", key: "ram" },
+        { label: "ALM", model: (storageGb / 1024).toFixed(2) + " TB", meta: storageType + " · volumen PyOS", key: "storage" },
       ];
       components.forEach((component) => {
         detail.appendChild(el("article", { class: "device-component" }, [
@@ -1294,16 +1305,16 @@ const PyApps = (() => {
         const telemetry = api.services().telemetry;
         if (!telemetry || !telemetry.enabled) {
           metrics.innerHTML = "";
-          metrics.append(metric("CPU AMD", "PAUSA", "Servicio de telemetría detenido", 0), metric("GPU NVIDIA", "PAUSA", "Servicio de telemetría detenido", 0), metric("RAM DDR5", "PAUSA", "Servicio de telemetría detenido", 0), metric("NVMe", "PAUSA", "Servicio de telemetría detenido", 0));
+          metrics.append(metric("CPU " + cpuVendor, "PAUSA", "Servicio de telemetría detenido", 0), metric("GPU " + gpuVendor, "PAUSA", "Servicio de telemetría detenido", 0), metric("RAM " + memoryType, "PAUSA", "Servicio de telemetría detenido", 0), metric(storageType, "PAUSA", "Servicio de telemetría detenido", 0));
           return;
         }
         const data = api.hardwareTelemetry();
         metrics.innerHTML = "";
         metrics.append(
-          metric("CPU AMD", data.cpu + "%", data.cpuClock + " GHz · " + data.cpuTemp + " °C · " + data.processes + " procesos", data.cpu),
-          metric("GPU NVIDIA", data.gpu + "%", data.gpuTemp + " °C · " + data.gpuClock + " MHz", data.gpu),
-          metric("RAM DDR5", data.ram.toFixed(1) + " / " + memoryGb + " GB", "" + Math.round(data.ram / memoryGb * 100) + "% en uso", data.ram / memoryGb * 100),
-          metric("NVMe", data.storage.toFixed(1) + " / " + storageGb + " GB", data.diskRate + " MB/s · " + Math.round(data.storage / storageGb * 100) + "% utilizado", data.storage / storageGb * 100),
+          metric("CPU " + cpuVendor, data.cpu + "%", data.cpuClock + " GHz · " + data.cpuTemp + " °C · " + data.processes + " procesos", data.cpu),
+          metric("GPU " + gpuVendor, data.gpu + "%", data.gpuTemp + " °C · " + data.gpuClock + " MHz", data.gpu),
+          metric("RAM " + memoryType, data.ram.toFixed(1) + " / " + memoryGb + " GB", "" + Math.round(data.ram / memoryGb * 100) + "% en uso", data.ram / memoryGb * 100),
+          metric(storageType, data.storage.toFixed(1) + " / " + storageGb + " GB", data.diskRate + " MB/s · " + Math.round(data.storage / storageGb * 100) + "% utilizado", data.storage / storageGb * 100),
           metric("RED", data.net.toFixed(1) + " Mb/s", navigator.onLine ? "Enlace activo · latencia 18 ms" : "Sin conexión", Math.min(96, data.net * 12))
         );
       }
